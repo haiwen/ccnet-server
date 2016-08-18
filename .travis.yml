@@ -1,0 +1,18 @@
+sudo: false
+language: c
+compiler:
+ - gcc
+ - clang
+addons:
+  apt:
+    packages:
+      - valac
+      - uuid-dev
+      - libevent-dev
+      - re2c
+      - libjansson-dev
+cache:
+  directories:
+    - $HOME/downloads
+script:
+ - ./ci/travis.sh

@@ -1,0 +1,126 @@
+
+Terminology
+===========
+
+* Peer
+* Ccnet daemon
+* Client
+* Service daemon: for example seafile daemon.
+
+
+Peer Transfer Layer
+===================
+
+Communication between peer is packet oriented.
+
+The packet structure is defined in `lib/packet.h` as
+
+    struct ccnet_header {
+        uint8_t  version;
+        uint8_t  type;
+        uint16_t length;            /* length of payload */
+        uint32_t id;                /* for identify a service session id */
+    };
+
+    struct ccnet_packet {
+        struct ccnet_header header;
+        char data[0];
+    };
+
+So the max length of payload is 65535.
+
+
+Service Invocation
+==================
+
+Ccnet provide a service invocation layer upon transfer layer. 
+
+Local Service Invoking
+----------------------
+
+A local service is provided either by ccnet daemon or a service
+daemon. To invoke a local service, client first sends a REQUEST
+packet containing the service name and arguments to ccnet
+daemon. Ccnet daemon will find the daemon who provide the service and
+start the service. This starts a `service session`. A service session
+is identified by a unique id. Later communication for this session
+using REQUEST and UPDATE packets. These packets constains the unique
+id in their header for the partners to identify the session.
+
+            <service-name>               <service-name>
+     Client --------------> Ccnet Daemon --------------> Service Daemon
+
+                UPDATE                      UPDATE
+     Client --------------> Ccnet Daemon ------------> Service Daemon
+            <-------------              <------------
+               RESPONSE                    RESPONSE
+
+
+Remote Service Invoking
+-----------------------
+
+
+          remote <peer-id> <service-name>          <service-name>
+     Client -----------------------> Ccnet Daemon --------------> Remote Ccnet
+
+                  UPDATE                               UPDATE
+     Client -----------------------> Ccnet Daemon --------------> Remote Ccnet
+            <-----------------------              <--------------
+                  RESPONSE                            RESPONSE
+
+Note: if <peer-id> is self, remote service invoking will be
+automatically turned to local service invoking.
+
+
+Service Registration
+--------------------
+
+The daemons implements a service by a subclass of `CcnetProcessor` and
+registers it to ccnet daemon by calling `ccnet_register_service()`:
+
+    CcnetClient *client;
+    ccnet_register_service (client, "seafile-rpcserver",
+                            CCNET_TYPE_RPCSERVER_PROC);
+
+This is used by the seafile daemon to register service
+"seafile-rpcserver" to ccnet daemon.
+
+Inside the ccnet daemon, a service is registered simply by calling 
+
+    void
+    ccnet_proc_factory_register_processor (CcnetProcFactory *factory,
+                                           const char *proc_name,
+                                           GType type);
+
+
+Processor Management
+====================
+
+Local Service Invoking
+----------------------
+
+To support local service invoking, a service proxy processor and a
+service stub processor will be started when necessary. The runtime
+configuration is as following:
+
+    Local Client               Ccnet Daemon                      Service Daemon
+                         ----------------------------------
+   Client Processor ---> | Service Proxy --> Service Stub | --> Daemon Processor
+                         ----------------------------------
+
+Remote Service Invoking
+-----------------------
+
+The runtime configuration is as following:
+
+    Local Client               Ccnet Daemon                    Remote Ccnet Daemon
+                         ----------------------------------    
+   Client Processor ---> | Service Proxy --> Service Stub | -->  Daemon Processor
+                         ----------------------------------
+
+
+Notes when using processor
+--------------------------
+
+* A class of processor may provide different services, we use 'processor->name'
+  to remember which service an instance of a processor class provided.
