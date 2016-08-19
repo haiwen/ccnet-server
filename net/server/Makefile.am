@@ -11,41 +11,7 @@ AM_CPPFLAGS = @GLIB2_CFLAGS@ @GOBJECT_CFLAGS@ \
 
 bin_PROGRAMS = ccnet-server
 
-PROC_HEADER_FILES = \
-	$(addprefix ../common/processors/, \
-	rcvmsg-proc.h \
-	rcvcmd-proc.h \
-	sendmsg-proc.h \
-	getpubinfo-proc.h putpubinfo-proc.h \
-	keepalive2-proc.h \
-	mqserver-proc.h \
-	service-proxy-proc.h service-stub-proc.h \
-	rpcserver-proc.h \
-	threaded-rpcserver-proc.h \
-	echo-proc.h \
-	sendsessionkey-proc.h \
-	recvsessionkey-proc.h \
-	sendsessionkey-v2-proc.h \
-	recvsessionkey-v2-proc.h )
-
-common_headers = 
-	../common/algorithms.h \
-	../common/proc-factory.h ../common/session.h \
-	../common/common.h ../common/handshake.h ../common/perm-mgr.h \
-	../common/peer.h ../common/connect-mgr.h \
-	../common/packet-io.h ../common/ccnet-config.h \
-	../common/log.h ../common/peer-mgr.h \
-	../common/message.h \
-	../common/getgateway.h ../common/message-manager.h \
-	../common/processor.h \
-	../common/peermgr-message.h \
-	../common/rpc-service.h \
-	../common/ccnet-db.h
-
-
-noinst_HEADERS = $(common_headers) \
-	server-session.h user-mgr.h group-mgr.h org-mgr.h \
-	$(PROC_HEADER_FILES)
+noinst_HEADERS = server-session.h user-mgr.h group-mgr.h org-mgr.h
 
 
 common_srcs = ../common/ccnet-db.c \
