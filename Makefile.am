@@ -7,7 +7,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 
 SUBDIRS = include lib net tools python
 
-EXTRA_DIST = install-sh libccnet.pc.in LICENCE.txt
+EXTRA_DIST = install-sh libccnet.pc.in LICENSE.txt
 
 ACLOCAL_AMFLAGS = -I m4
 
