@@ -33,7 +33,8 @@ ccnet_db_new_pgsql (const char *host,
                     const char *user,
                     const char *passwd,
                     const char *db_name,
-                    const char *unix_socket);
+                    const char *unix_socket,
+                    int max_connections);
 
 CcnetDB *
 ccnet_db_new_sqlite (const char *db_path);

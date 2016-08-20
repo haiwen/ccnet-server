@@ -216,7 +216,8 @@ static int init_pgsql_database (CcnetSession *session)
     unix_socket = ccnet_key_file_get_string (session->keyf,
                                              "Database", "UNIX_SOCKET");
 
-    session->db = ccnet_db_new_pgsql (host, user, passwd, db, unix_socket);
+    session->db = ccnet_db_new_pgsql (host, user, passwd, db, unix_socket,
+                                      DEFAULT_MAX_CONNECTIONS);
     if (!session->db) {
         g_warning ("Failed to open database.\n");
         return -1;
