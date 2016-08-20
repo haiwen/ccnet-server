@@ -122,6 +122,8 @@ static int init_sqlite_database (CcnetSession *session)
     return 0;
 }
 
+#ifdef HAVE_MYSQL
+
 #define MYSQL_DEFAULT_PORT 3306
 
 static int init_mysql_database (CcnetSession *session)
@@ -188,6 +190,10 @@ static int init_mysql_database (CcnetSession *session)
     return 0;
 }
 
+#endif
+
+#ifdef HAVE_POSTGRESQL
+
 static int init_pgsql_database (CcnetSession *session)
 {
     char *host, *user, *passwd, *db, *unix_socket;
@@ -226,6 +232,8 @@ static int init_pgsql_database (CcnetSession *session)
    return 0;
 }
 
+#endif
+
 static int
 load_database_config (CcnetSession *session)
 {
@@ -236,13 +244,20 @@ load_database_config (CcnetSession *session)
     if (!engine || strncasecmp (engine, DB_SQLITE, sizeof(DB_SQLITE)) == 0) {
         ccnet_debug ("Use database sqlite\n");
         ret = init_sqlite_database (session);
-    } else if (strncasecmp (engine, DB_MYSQL, sizeof(DB_MYSQL)) == 0) {
+    }
+#ifdef HAVE_MYSQL
+    else if (strncasecmp (engine, DB_MYSQL, sizeof(DB_MYSQL)) == 0) {
         ccnet_debug ("Use database Mysql\n");
         ret = init_mysql_database (session);
-    } else if (strncasecmp (engine, DB_PGSQL, sizeof(DB_PGSQL)) == 0) {
+    }
+#endif
+#ifdef HAVE_POSTGRESQL
+    else if (strncasecmp (engine, DB_PGSQL, sizeof(DB_PGSQL)) == 0) {
         ccnet_debug ("Use database PostgreSQL\n");
         ret = init_pgsql_database (session);
-    } else {
+    }
+#endif
+    else {
         ccnet_warning ("Unknown database type: %s.\n", engine);
         ret = -1;
     }

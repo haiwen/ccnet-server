@@ -21,6 +21,8 @@ struct CcnetDBTrans {
     DBConnection *conn;
 };
 
+#ifdef HAVE_MYSQL
+
 CcnetDB *
 ccnet_db_new_mysql (const char *host,
                    int port,
@@ -48,6 +50,10 @@ ccnet_db_new_mysql (const char *host,
     return db;
 }
 
+#endif
+
+#ifdef HAVE_POSTGRESQL
+
 CcnetDB *
 ccnet_db_new_pgsql (const char *host,
                     const char *user,
@@ -71,6 +77,8 @@ ccnet_db_new_pgsql (const char *host,
 
     return db;
 }
+
+#endif
 
 CcnetDB *
 ccnet_db_new_sqlite (const char *db_path)
