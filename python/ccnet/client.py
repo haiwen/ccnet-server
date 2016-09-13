@@ -91,7 +91,10 @@ class Client(object):
     def parse_config(self):
         self.config = ConfigParser.ConfigParser()
         self.config.read(self.config_file)
-        self.port = self.config.getint('Client', 'PORT')
+        if self.config.has_option('Client', 'PORT'):
+            self.port = self.config.getint('Client', 'PORT')
+        else:
+            self.port = 10001
         self.un_path = ''
         if self.config.has_option('Client', 'UNIX_SOCKET'):
             self.un_path = self.config.get('Client', 'UNIX_SOCKET')
