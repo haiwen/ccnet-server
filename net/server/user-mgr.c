@@ -1315,8 +1315,8 @@ ccnet_user_manager_get_emailusers (CcnetUserManager *manager,
 
         sql = g_strdup_printf ("SELECT t1.id, t1.email, "
                                "t1.is_staff, t1.is_active, t1.ctime, "
-                               "t2.role, t1.passwd FROM EmailUser AS t1 "
-                               "LEFT JOIN UserRole AS t2 "
+                               "t2.role, t1.passwd FROM EmailUser t1 "
+                               "LEFT JOIN UserRole t2 "
                                "ON t1.email = t2.email %s",
                                status_condition);
 
@@ -1333,8 +1333,8 @@ ccnet_user_manager_get_emailusers (CcnetUserManager *manager,
 
         sql = g_strdup_printf ("SELECT t1.id, t1.email, "
                                "t1.is_staff, t1.is_active, t1.ctime, "
-                               "t2.role, t1.passwd FROM EmailUser AS t1 "
-                               "LEFT JOIN UserRole AS t2 "
+                               "t2.role, t1.passwd FROM EmailUser t1 "
+                               "LEFT JOIN UserRole t2 "
                                "ON t1.email = t2.email %s "
                                "ORDER BY t1.id LIMIT ? OFFSET ?",
                                status_condition);
@@ -1414,8 +1414,8 @@ ccnet_user_manager_search_emailusers (CcnetUserManager *manager,
         rc = ccnet_db_statement_foreach_row (db,
                                              "SELECT t1.id, t1.email, "
                                              "t1.is_staff, t1.is_active, t1.ctime, "
-                                             "t2.role, t1.passwd FROM EmailUser AS t1 "
-                                             "LEFT JOIN UserRole AS t2 "
+                                             "t2.role, t1.passwd FROM EmailUser t1 "
+                                             "LEFT JOIN UserRole t2 "
                                              "ON t1.email = t2.email "
                                              "WHERE t1.Email LIKE ? "
                                              "ORDER BY t1.id",
@@ -1425,8 +1425,8 @@ ccnet_user_manager_search_emailusers (CcnetUserManager *manager,
         rc = ccnet_db_statement_foreach_row (db,
                                              "SELECT t1.id, t1.email, "
                                              "t1.is_staff, t1.is_active, t1.ctime, "
-                                             "t2.role, t1.passwd FROM EmailUser AS t1 "
-                                             "LEFT JOIN UserRole AS t2 "
+                                             "t2.role, t1.passwd FROM EmailUser t1 "
+                                             "LEFT JOIN UserRole t2 "
                                              "ON t1.email = t2.email "
                                              "WHERE t1.Email LIKE ? "
                                              "ORDER BY t1.id LIMIT ? OFFSET ?",
@@ -1659,8 +1659,8 @@ ccnet_user_manager_get_superusers(CcnetUserManager *manager)
     snprintf (sql, 512,
               "SELECT t1.id, t1.email, "
               "t1.is_staff, t1.is_active, t1.ctime, "
-              "t2.role, t1.passwd FROM EmailUser AS t1 "
-              "LEFT JOIN UserRole AS t2 "
+              "t2.role, t1.passwd FROM EmailUser t1 "
+              "LEFT JOIN UserRole t2 "
               "ON t1.email = t2.email "
               "WHERE is_staff = 1;");
 
@@ -1675,8 +1675,8 @@ ccnet_user_manager_get_superusers(CcnetUserManager *manager)
     if (ccnet_db_foreach_selected_row (db,
                                        "SELECT t1.id, t1.email, "
                                        "t1.is_staff, t1.is_active, "
-                                       "t2.role FROM LDAPUsers AS t1 "
-                                       "LEFT JOIN UserRole AS t2 "
+                                       "t2.role FROM LDAPUsers t1 "
+                                       "LEFT JOIN UserRole t2 "
                                        "ON t1.email = t2.email "
                                        "WHERE is_staff = 1",
                                        get_ldap_emailusers_cb, &ret) < 0) {
