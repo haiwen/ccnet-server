@@ -98,11 +98,12 @@ on_ccnet_exit(void)
 }
 
 
-static const char *short_options = "hvdtc:D:f:P:M:F:";
+static const char *short_options = "hvdta:c:D:f:P:M:F:";
 static struct option long_options[] = {
     { "help", no_argument, NULL, 'h', }, 
     { "version", no_argument, NULL, 'v', }, 
     { "config-dir", required_argument, NULL, 'c' },
+    { "add-admin", required_argument, NULL, 'a' },
     { "central-config-dir", required_argument, NULL, 'F' },
     { "logfile", required_argument, NULL, 'f' },
     { "debug", required_argument, NULL, 'D' },
@@ -180,6 +181,7 @@ main (int argc, char **argv)
 {
     int c;
     char *config_dir;
+    char *admin_passwd = NULL;
     char *central_config_dir = NULL;
     char *log_file = 0;
     const char *debug_str = 0;
@@ -226,6 +228,9 @@ main (int argc, char **argv)
             break;
         case 't':
             test_config = TRUE;
+            break;
+        case 'a':
+            admin_passwd = optarg;
             break;
         default:
             fprintf (stderr, "unknown option \"-%c\"\n", (char)c);
@@ -314,6 +319,29 @@ main (int argc, char **argv)
         fputs ("Error: failed to start ccnet session, "
                "see log file for the detail.\n", stderr);
         return -1;
+    }
+    if (admin_passwd) {
+
+        int ret = 0;
+        char **admin_pass = g_strsplit(admin_passwd, "/", 2);
+
+        if (g_strv_length (admin_pass) < 2 ) {
+            fprintf (stderr, "Error: Missing parameter, failed to add admin\n");
+            ret = -1;
+        } else if (!strcmp(admin_pass[0], "") || !strcmp(admin_pass[1], "")) {
+            fprintf (stderr, "Error: Username or password can't be null, failed to add admin\n");
+            ret = -1;
+        } else if (ccnet_user_manager_add_emailuser (((struct CcnetServerSession *)session)->user_mgr, 
+                                                        admin_pass[0], 
+                                                        admin_pass[1],
+                                                        1, 1)) {
+
+            fprintf (stderr, "Error: Failed to add admin\n");
+            ret = -1;
+        }
+
+        g_strfreev (admin_pass);
+        return ret;
     }
     
     /* write pidfile after session_prepare success, if there is
