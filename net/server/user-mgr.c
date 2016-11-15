@@ -1282,13 +1282,13 @@ ccnet_user_manager_get_emailusers (CcnetUserManager *manager,
                 sql = g_strdup_printf ("SELECT t1.id, t1.email, t1.is_staff, "
                                        "t1.is_active, t2.role "
                                        "FROM LDAPUsers t1 LEFT JOIN UserRole t2 "
-                                       "ON t1.email = t2.email %s LIMIT ?, ?",
+                                       "ON t1.email = t2.email %s LIMIT ? OFFSET ?",
                                        status_condition);
 
                 rc = ccnet_db_statement_foreach_row (db,
                                                      sql,
                                                      get_ldap_emailusers_cb,
-                                                     &users, 2, "int", start, "int", limit);
+                                                     &users, 2, "int", limit, "int", start);
                 g_free (sql);
             }
 
@@ -1385,10 +1385,10 @@ ccnet_user_manager_search_emailusers (CcnetUserManager *manager,
                                                      "t1.is_active, t2.role "
                                                      "FROM LDAPUsers t1 LEFT JOIN UserRole t2 "
                                                      "ON t1.email = t2.email WHERE t1.email LIKE ? "
-                                                     "LIMIT ?, ?",
+                                                     "LIMIT ? OFFSET ?",
                                                      get_ldap_emailusers_cb,
                                                      &ret, 3, "string", db_patt,
-                                                     "int", start, "int", limit);
+                                                     "int", limit, "int", start);
             }
 
             g_free (db_patt);

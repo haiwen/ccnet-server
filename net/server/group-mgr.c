@@ -751,9 +751,9 @@ ccnet_group_manager_get_all_groups (CcnetGroupManager *mgr,
         } else {
             rc = ccnet_db_statement_foreach_row (db, "SELECT `group_id`, `group_name`, "
                                                  "`creator_name`, `timestamp` FROM `Group` "
-                                                 "ORDER BY timestamp DESC LIMIT ?, ?",
+                                                 "ORDER BY timestamp DESC LIMIT ? OFFSET ?",
                                                  get_all_ccnetgroups_cb, &ret,
-                                                 2, "int", start, "int", limit);
+                                                 2, "int", limit, "int", start);
         }
     }
 

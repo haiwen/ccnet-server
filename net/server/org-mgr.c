@@ -589,10 +589,10 @@ ccnet_org_manager_get_org_groups (CcnetOrgManager *mgr,
     } else {
         rc = ccnet_db_statement_foreach_row (db,
                                              "SELECT group_id FROM OrgGroup WHERE "
-                                             "org_id = ? LIMIT ?, ?",
+                                             "org_id = ? LIMIT ? OFFSET ?",
                                              get_org_groups, &ret,
-                                             3, "int", org_id, "int", start,
-                                             "int", limit);
+                                             3, "int", org_id, "int", limit,
+                                             "int", start);
     }
     
     if (rc < 0) {
