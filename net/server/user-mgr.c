@@ -25,6 +25,10 @@
     #include <ldap.h>
   #else
     #include <winldap.h>
+    #include <winber.h>
+    #ifndef LDAP_OPT_SUCCESS
+    #define LDAP_OPT_SUCCESS LDAP_SUCCESS
+    #endif
   #endif
 #endif
 
@@ -1557,7 +1561,7 @@ ccnet_user_manager_filter_emailusers_by_emails(CcnetUserManager *manager,
 
     g_free (copy);
     g_string_free (sql, TRUE);
-    
+
     return g_list_reverse (ret);
 }
 #endif
