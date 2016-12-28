@@ -389,7 +389,7 @@ ccnet_util_key_file_get_string (GKeyFile *keyf,
         return NULL;
     }
 
-    return v;
+    return g_strchomp(v);
 }
 
 void

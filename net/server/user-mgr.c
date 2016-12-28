@@ -189,7 +189,7 @@ static int try_load_ldap_settings (CcnetUserManager *manager)
 {
     GKeyFile *config = manager->session->keyf;
 
-    manager->ldap_host = g_key_file_get_string (config, "LDAP", "HOST", NULL);
+    manager->ldap_host = ccnet_key_file_get_string (config, "LDAP", "HOST");
     if (!manager->ldap_host)
         return 0;
 
@@ -199,18 +199,18 @@ static int try_load_ldap_settings (CcnetUserManager *manager)
     manager->use_ssl = g_key_file_get_boolean (config, "LDAP", "USE_SSL", NULL);
 #endif
 
-    char *base_list = g_key_file_get_string (config, "LDAP", "BASE", NULL);
+    char *base_list = ccnet_key_file_get_string (config, "LDAP", "BASE");
     if (!base_list) {
         ccnet_warning ("LDAP: BASE not found in config file.\n");
         return -1;
     }
     manager->base_list = g_strsplit (base_list, ";", -1);
 
-    manager->filter = g_key_file_get_string (config, "LDAP", "FILTER", NULL);
+    manager->filter = ccnet_key_file_get_string (config, "LDAP", "FILTER");
 
-    manager->user_dn = g_key_file_get_string (config, "LDAP", "USER_DN", NULL);
+    manager->user_dn = ccnet_key_file_get_string (config, "LDAP", "USER_DN");
     if (manager->user_dn) {
-        manager->password = g_key_file_get_string (config, "LDAP", "PASSWORD", NULL);
+        manager->password = ccnet_key_file_get_string (config, "LDAP", "PASSWORD");
         if (!manager->password) {
             ccnet_warning ("LDAP: PASSWORD not found in config file.\n");
             return -1;
@@ -218,7 +218,7 @@ static int try_load_ldap_settings (CcnetUserManager *manager)
     }
     /* Use anonymous if user_dn is not set. */
 
-    manager->login_attr = g_key_file_get_string (config, "LDAP", "LOGIN_ATTR", NULL);
+    manager->login_attr = ccnet_key_file_get_string (config, "LDAP", "LOGIN_ATTR");
     if (!manager->login_attr)
         manager->login_attr = g_strdup("mail");
 
