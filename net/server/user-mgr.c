@@ -1101,6 +1101,9 @@ get_emailuser (CcnetUserManager *manager,
 
             users = ldap_list_users (manager, email, -1, -1);
             if (!users) {
+                /* Only print warning if this function is called in login. */
+                if (import)
+                    ccnet_warning ("Cannot find user %s in LDAP.\n", email);
                 g_free (email_down);
                 return NULL;
             }
