@@ -401,7 +401,7 @@ static int ldap_verify_user_password (CcnetUserManager *manager,
     }
 
     if (!dn) {
-        ccnet_warning ("Can't find user %s in LDAP.\n", uid);
+        ccnet_debug ("Cannot find user %s in LDAP.\n", uid);
         ret = -1;
         goto out;
     }
@@ -416,7 +416,7 @@ static int ldap_verify_user_password (CcnetUserManager *manager,
 #endif
                              dn, password);
     if (!ld) {
-        ccnet_warning ("Password check for %s failed.\n", uid);
+        ccnet_debug ("Password incorrect for %s in LDAP.\n", uid);
         ret = -1;
     }
 
