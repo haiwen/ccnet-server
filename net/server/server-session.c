@@ -197,6 +197,7 @@ static int init_mysql_database (CcnetSession *session)
 static int init_pgsql_database (CcnetSession *session)
 {
     char *host, *user, *passwd, *db, *unix_socket;
+    unsigned int port;
 
     host = ccnet_key_file_get_string (session->keyf, "Database", "HOST");
     user = ccnet_key_file_get_string (session->keyf, "Database", "USER");
@@ -219,10 +220,17 @@ static int init_pgsql_database (CcnetSession *session)
         g_warning ("DB name not set in config.\n");
         return -1;
     }
+
+    GError *error = NULL;
+    port = g_key_file_get_integer (session->keyf, "Database", "PORT", &error);
+    if (error) {
+        port = 0;
+        g_clear_error (&error);
+    }
     unix_socket = ccnet_key_file_get_string (session->keyf,
                                              "Database", "UNIX_SOCKET");
 
-    session->db = ccnet_db_new_pgsql (host, user, passwd, db, unix_socket,
+    session->db = ccnet_db_new_pgsql (host, port, user, passwd, db, unix_socket,
                                       DEFAULT_MAX_CONNECTIONS);
     if (!session->db) {
         g_warning ("Failed to open database.\n");
