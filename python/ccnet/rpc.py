@@ -327,6 +327,10 @@ class CcnetThreadedRpcClient(RpcClientBase):
     def set_group_creator(self, group_id, user_name):
         pass
 
+    @searpc_func("objlist", ["string", "int", "int"])
+    def search_groups(self, group_patt, start, limit):
+        pass
+
     @searpc_func("int", ["string", "string", "string"])
     def create_org(self, org_name, url_prefix, creator):
         pass

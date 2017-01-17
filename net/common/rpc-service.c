@@ -276,6 +276,10 @@ ccnet_start_rpc(CcnetSession *session)
                                      ccnet_rpc_set_group_creator,
                                      "set_group_creator",
                                      searpc_signature_int__int_string());
+    searpc_server_register_function ("ccnet-threaded-rpcserver",
+                                     ccnet_rpc_search_groups,
+                                     "search_groups",
+                                     searpc_signature_objlist__string_int_int());
 
     searpc_server_register_function ("ccnet-threaded-rpcserver",
                                      ccnet_rpc_create_org,
@@ -774,6 +778,21 @@ ccnet_rpc_search_emailusers (const char *source,
                                                        start, limit);
     
     return emailusers;
+}
+
+GList*
+ccnet_rpc_search_groups (const char *group_patt,
+                         int start, int limit,
+                         GError **error)
+{
+    CcnetGroupManager *group_mgr =
+        ((CcnetServerSession *)session)->group_mgr;
+    GList *groups = NULL;
+
+    groups = ccnet_group_manager_search_groups (group_mgr,
+                                                group_patt,
+                                                start, limit);
+    return groups;
 }
 
 GList*

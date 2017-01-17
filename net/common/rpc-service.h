@@ -114,6 +114,11 @@ ccnet_rpc_search_emailusers (const char *source,
                              const char *email_patt,
                              int start, int limit,
                              GError **error);
+GList*
+ccnet_rpc_search_groups (const char *group_patt,
+                         int start, int limit,
+                         GError **error);
+
 
 GList*
 ccnet_rpc_search_ldapusers (const char *keyword,

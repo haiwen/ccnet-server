@@ -783,3 +783,61 @@ ccnet_group_manager_set_group_creator (CcnetGroupManager *mgr,
     
 }
 
+GList *
+ccnet_group_manager_search_groups (CcnetGroupManager *mgr,
+                                   const char *keyword,
+                                   int start, int limit)
+{
+    CcnetDB *db = mgr->priv->db;
+    GList *ret = NULL;
+    int rc;
+    char *db_patt = g_strdup_printf ("%%%s%%", keyword);
+
+    if (ccnet_db_type(db) == CCNET_DB_TYPE_PGSQL) {
+        if (start == -1 && limit == -1)
+            rc = ccnet_db_statement_foreach_row (db,
+                                                 "SELECT group_id, group_name, "
+                                                 "creator_name, timestamp "
+                                                 "FROM \"Group\" WHERE group_name LIKE ?",
+                                                 get_all_ccnetgroups_cb, &ret,
+                                                 1, "string", db_patt);
+
+        else
+            rc = ccnet_db_statement_foreach_row (db,
+                                                 "SELECT group_id, group_name, "
+                                                 "creator_name, timestamp "
+                                                 "FROM \"Group\" WHERE group_name LIKE ? "
+                                                 "LIMIT ? OFFSET ?",
+                                                 get_all_ccnetgroups_cb, &ret,
+                                                 3, "string", db_patt,
+                                                 "int", limit, "int", start);
+    } else {
+        if (start == -1 && limit == -1)
+            rc = ccnet_db_statement_foreach_row (db,
+                                                 "SELECT group_id, group_name, "
+                                                 "creator_name, timestamp "
+                                                 "FROM `Group` WHERE group_name LIKE ?",
+                                                 get_all_ccnetgroups_cb, &ret,
+                                                 1, "string", db_patt);
+        else
+            rc = ccnet_db_statement_foreach_row (db,
+                                                 "SELECT group_id, group_name, "
+                                                 "creator_name, timestamp "
+                                                 "FROM `Group` WHERE group_name LIKE ? "
+                                                 "LIMIT ? OFFSET ?",
+                                                 get_all_ccnetgroups_cb, &ret,
+                                                 3, "string", db_patt,
+                                                 "int", limit, "int", start);
+    }
+    g_free (db_patt);
+
+    if (rc < 0) {
+        while (ret != NULL) {
+            g_object_unref (ret->data);
+            ret = g_list_delete_link (ret, ret);
+        }
+        return NULL;
+    }
+
+    return g_list_reverse (ret);
+}

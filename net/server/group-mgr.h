@@ -107,5 +107,9 @@ ccnet_group_manager_set_group_creator (CcnetGroupManager *mgr,
                                        int group_id,
                                        const char *user_name);
 
+GList*
+ccnet_group_manager_search_groups (CcnetGroupManager *mgr,
+                                   const char *keyword,
+                                   int start, int limit);
 #endif /* GROUP_MGR_H */
 
