@@ -331,6 +331,10 @@ class CcnetThreadedRpcClient(RpcClientBase):
     def search_groups(self, group_patt, start, limit):
         pass
 
+    @searpc_func("int", ["string", "int64"])
+    def set_role_quota(self, role, quota):
+        pass
+
     @searpc_func("int", ["string", "string", "string"])
     def create_org(self, org_name, url_prefix, creator):
         pass

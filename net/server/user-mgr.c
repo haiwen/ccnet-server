@@ -564,6 +564,12 @@ static int check_db_table (CcnetDB *db)
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
+        sql = "CREATE TABLE IF NOT EXISTS RoleQuota ("
+              "role VARCHAR(255) NOT NULL PRIMARY KEY, "
+              "quota BIGINT, UNIQUE INDEX(role)) ENGINE=INNODB";
+        if (ccnet_db_query (db, sql) < 0)
+            return -1;
+
     } else if (db_type == CCNET_DB_TYPE_SQLITE) {
         sql = "CREATE TABLE IF NOT EXISTS EmailUser ("
             "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
@@ -611,6 +617,16 @@ static int check_db_table (CcnetDB *db)
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
+        sql = "CREATE TABLE IF NOT EXISTS RoleQuota ("
+              "role TEXT NOT NULL PRIMARY KEY, "
+              "quota BIGINT)";
+        if (ccnet_db_query (db, sql) < 0)
+            return -1;
+
+        sql = "CREATE UNIQUE INDEX IF NOT EXISTS rolequota_index on RoleQuota (role)";
+        if (ccnet_db_query (db, sql) < 0)
+            return -1;
+
     } else if (db_type == CCNET_DB_TYPE_PGSQL) {
         sql = "CREATE TABLE IF NOT EXISTS EmailUser ("
             "id SERIAL PRIMARY KEY, "
@@ -647,6 +663,11 @@ static int check_db_table (CcnetDB *db)
             if (ccnet_db_query (db, sql) < 0)
                 return -1;
         }
+
+        sql = "CREATE TABLE IF NOT EXISTS RoleQuota ("
+              "role VARCHAR(255) NOT NULL, quota BIGINT, UNIQUE (role))";
+        if (ccnet_db_query (db, sql) < 0)
+            return -1;
     }
 
     return 0;
@@ -1695,4 +1716,45 @@ ccnet_user_manager_get_superusers(CcnetUserManager *manager)
     }
 
     return g_list_reverse (ret);
+}
+
+int
+ccnet_user_manager_set_role_quota (CcnetUserManager *manager,
+                                   const char *role,
+                                   gint64 quota)
+{
+    CcnetDB *db = manager->priv->db;
+    gint64 old_quota = ccnet_user_manager_get_role_quota (manager, role);
+    if (old_quota > 0)
+        return ccnet_db_statement_query (db, "UPDATE RoleQuota SET quota=? "
+                                         "WHERE role=?",
+                                         2, "int64", quota, "string", role);
+    else
+        return ccnet_db_statement_query (db, "INSERT INTO RoleQuota(role, quota)"
+                                         " VALUES (?, ?)",
+                                         2, "string", role, "int64", quota);
+}
+
+static gboolean
+get_role_quota_cb (CcnetDBRow *row, void *data)
+{
+    *((gint64 **)data) = ccnet_db_row_get_column_int64 (row, 0);
+
+    return FALSE;
+}
+
+gint64
+ccnet_user_manager_get_role_quota (CcnetUserManager *manager,
+                                   const char *role)
+{
+    CcnetDB *db = manager->priv->db;
+    const char *sql;
+    gint64 quota;
+
+    sql = "SELECT quota FROM RoleQuota WHERE role=?";
+    if (ccnet_db_statement_foreach_row (db, sql, get_role_quota_cb, &quota,
+                                        1, "string", role) > 0)
+        return quota;
+
+    return -1;
 }
