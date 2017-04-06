@@ -98,6 +98,12 @@ ccnet_org_manager_get_org_id_by_group (CcnetOrgManager *mgr,
                                        GError **error);
 
 GList *
+ccnet_org_manager_get_org_group_ids (CcnetOrgManager *mgr,
+                                     int org_id,
+                                     int start,
+                                     int limit);
+
+GList *
 ccnet_org_manager_get_org_groups (CcnetOrgManager *mgr,
                                   int org_id,
                                   int start,

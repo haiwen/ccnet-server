@@ -72,9 +72,9 @@ int ccnet_group_manager_quit_group (CcnetGroupManager *mgr,
                                     GError **error);
 
 GList *
-ccnet_group_manager_get_groupids_by_user (CcnetGroupManager *mgr,
-                                          const char *user_name,
-                                          GError **error);
+ccnet_group_manager_get_groups_by_user (CcnetGroupManager *mgr,
+                                        const char *user_name,
+                                        GError **error);
 
 CcnetGroup *
 ccnet_group_manager_get_group (CcnetGroupManager *mgr, int group_id,

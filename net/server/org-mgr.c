@@ -559,7 +559,7 @@ ccnet_org_manager_get_org_id_by_group (CcnetOrgManager *mgr,
 }
 
 static gboolean
-get_org_groups (CcnetDBRow *row, void *data)
+get_org_group_ids (CcnetDBRow *row, void *data)
 {
     GList **plist = data;
 
@@ -571,10 +571,10 @@ get_org_groups (CcnetDBRow *row, void *data)
 }
 
 GList *
-ccnet_org_manager_get_org_groups (CcnetOrgManager *mgr,
-                                  int org_id,
-                                  int start,
-                                  int limit)
+ccnet_org_manager_get_org_group_ids (CcnetOrgManager *mgr,
+                                     int org_id,
+                                     int start,
+                                     int limit)
 {
     CcnetDB *db = mgr->priv->db;
     GList *ret = NULL;
@@ -584,19 +584,79 @@ ccnet_org_manager_get_org_groups (CcnetOrgManager *mgr,
         rc = ccnet_db_statement_foreach_row (db,
                                              "SELECT group_id FROM OrgGroup WHERE "
                                              "org_id = ?",
-                                             get_org_groups, &ret,
+                                             get_org_group_ids, &ret,
                                              1, "int", org_id);
     } else {
         rc = ccnet_db_statement_foreach_row (db,
                                              "SELECT group_id FROM OrgGroup WHERE "
                                              "org_id = ? LIMIT ? OFFSET ?",
-                                             get_org_groups, &ret,
+                                             get_org_group_ids, &ret,
                                              3, "int", org_id, "int", limit,
                                              "int", start);
     }
     
     if (rc < 0) {
         g_list_free (ret);
+        return NULL;
+    }
+
+    return g_list_reverse (ret);
+}
+
+static gboolean
+get_org_groups (CcnetDBRow *row, void *data)
+{
+    GList **plist = data;
+    CcnetGroup *group;
+
+    int group_id = ccnet_db_row_get_column_int (row, 0);
+    const char *group_name = ccnet_db_row_get_column_text (row, 1);
+    const char *creator_name = ccnet_db_row_get_column_text (row, 2);
+    gint64 ts = ccnet_db_row_get_column_int64 (row, 3);
+
+    group = g_object_new (CCNET_TYPE_GROUP,
+                          "id", group_id,
+                          "group_name", group_name,
+                          "creator_name", creator_name,
+                          "timestamp", ts,
+                          "source", "DB",
+                          NULL);
+
+    *plist = g_list_prepend (*plist, group);
+
+    return TRUE;
+}
+
+GList *
+ccnet_org_manager_get_org_groups (CcnetOrgManager *mgr,
+                                  int org_id,
+                                  int start,
+                                  int limit)
+{
+    CcnetDB *db = mgr->priv->db;
+    char *sql;
+    GList *ret = NULL;
+    int rc;
+
+    if (limit == -1) {
+        sql = "SELECT g.group_id, group_name, creator_name, timestamp FROM "
+            "OrgGroup o, `Group` g WHERE o.group_id = g.group_id AND org_id = ?";
+        rc = ccnet_db_statement_foreach_row (db,
+                                             sql,
+                                             get_org_groups, &ret,
+                                             1, "int", org_id);
+    } else {
+        sql = "SELECT g.group_id, group_name, creator_name, timestamp FROM "
+            "OrgGroup o, `Group` g WHERE o.group_id = g.group_id AND org_id = ? "
+            "LIMIT ? OFFSET ?";
+        rc = ccnet_db_statement_foreach_row (db,
+                                             sql,
+                                             get_org_groups, &ret,
+                                             3, "int", org_id, "int", limit,
+                                             "int", start);
+    }
+    
+    if (rc < 0) {
         return NULL;
     }
 

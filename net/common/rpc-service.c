@@ -1092,29 +1092,11 @@ ccnet_rpc_quit_group (int group_id, const char *user_name, GError **error)
     return ret;
 }
 
-static GList *
-convert_group_list (CcnetGroupManager *mgr, GList *group_ids)
-{
-    GList *ret = NULL, *ptr;
-
-    for (ptr = group_ids; ptr; ptr = ptr->next) {
-        int group_id = (int)(long)ptr->data;
-        CcnetGroup *group = ccnet_group_manager_get_group (mgr, group_id,
-                                                           NULL);
-        if (group != NULL) {
-            ret = g_list_prepend (ret, group);
-        }
-    }
-    
-    return g_list_reverse (ret);
-}
-
 GList *
 ccnet_rpc_get_groups (const char *username, GError **error)
 {
     CcnetGroupManager *group_mgr = 
         ((CcnetServerSession *)session)->group_mgr;
-    GList *group_ids = NULL;
     GList *ret = NULL;
 
     if (!username) {
@@ -1123,15 +1105,7 @@ ccnet_rpc_get_groups (const char *username, GError **error)
         return NULL;
     }
 
-    group_ids = ccnet_group_manager_get_groupids_by_user (group_mgr, username,
-                                                          error);
-    if (group_ids == NULL) {
-        return NULL;
-    }
-
-    ret = convert_group_list (group_mgr, group_ids);
-    g_list_free (group_ids);
-
+    ret = ccnet_group_manager_get_groups_by_user (group_mgr, username, error);
     return ret;
 }
 
@@ -1274,7 +1248,7 @@ ccnet_rpc_remove_org (int org_id, GError **error)
     }
     string_list_free (email_list);
 
-    group_ids = ccnet_org_manager_get_org_groups (org_mgr, org_id, 0, INT_MAX);
+    group_ids = ccnet_org_manager_get_org_group_ids (org_mgr, org_id, 0, INT_MAX);
     ptr = group_ids;
     while (ptr) {
         ccnet_group_manager_remove_group (group_mgr, (int)(long)ptr->data, error);
@@ -1474,8 +1448,6 @@ GList *
 ccnet_rpc_get_org_groups (int org_id, int start, int limit, GError **error)
 {
     CcnetOrgManager *org_mgr = ((CcnetServerSession *)session)->org_mgr;
-    CcnetGroupManager *group_mgr = ((CcnetServerSession *)session)->group_mgr;
-    GList *group_ids = NULL;
     GList *ret = NULL;
     
     if (org_id < 0) {
@@ -1488,13 +1460,7 @@ ccnet_rpc_get_org_groups (int org_id, int start, int limit, GError **error)
         start = 0;
     }
     
-    group_ids = ccnet_org_manager_get_org_groups (org_mgr, org_id, start,
-                                                  limit);
-    if (group_ids == NULL)
-        return NULL;
-
-    ret = convert_group_list (group_mgr, group_ids);
-    g_list_free (group_ids);
+    ret = ccnet_org_manager_get_org_groups (org_mgr, org_id, start, limit);
 
     return ret;
 }

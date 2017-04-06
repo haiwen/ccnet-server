@@ -232,87 +232,45 @@ out:
     return group_id;
 }
 
-/* static gboolean */
-/* duplicate_group_name (CcnetGroupManager *mgr, */
-/*                       const char *group_name, */
-/*                       const char *user_name) */
-/* { */
-/*     GList *groups = NULL, *ptr; */
-/*     CcnetOrgManager *org_mgr = NULL; */
-/*     gboolean ret = FALSE; */
-
-/*     groups = ccnet_group_manager_get_all_groups (mgr, -1, -1, NULL); */
-/*     if (!groups) { */
-/*         return FALSE; */
-/*     } */
-    
-/*     for (ptr = groups; ptr; ptr = ptr->next) { */
-/*         CcnetGroup *group = (CcnetGroup *)ptr->data; */
-/*         org_mgr = ((CcnetServerSession *)(mgr->session))->org_mgr; */
-/*         if (ccnet_org_manager_is_org_group(org_mgr, ccnet_group_get_id (group), */
-/*                                            NULL)) { */
-/*             /\* Skip org groups. *\/ */
-/*             continue; */
-/*         } */
-
-/*         if (g_strcmp0 (group_name, ccnet_group_get_group_name (group)) == 0) { */
-/*             ret = TRUE; */
-/*             goto out; */
-/*         } */
-/*     } */
-    
-/* out: */
-/*     for (ptr = groups; ptr; ptr = ptr->next) */
-/*         g_object_unref ((GObject *)ptr->data); */
-/*     g_list_free (groups); */
-/*     return ret; */
-/* } */
-
 int ccnet_group_manager_create_group (CcnetGroupManager *mgr,
                                       const char *group_name,
                                       const char *user_name,
                                       GError **error)
 {
-
-    /* if (duplicate_group_name (mgr, group_name, user_name)) { */
-    /*     g_set_error (error, CCNET_DOMAIN, 0, "The group has already created"); */
-    /*     return -1; */
-    /* } */
-
     return create_group_common (mgr, group_name, user_name, error);
 }
 
-static gboolean
-duplicate_org_group_name (CcnetGroupManager *mgr,
-                          int org_id,
-                          const char *group_name)
-{
-    GList *org_groups = NULL, *ptr;
-    CcnetOrgManager *org_mgr = ((CcnetServerSession *)(mgr->session))->org_mgr;
+/* static gboolean */
+/* duplicate_org_group_name (CcnetGroupManager *mgr, */
+/*                           int org_id, */
+/*                           const char *group_name) */
+/* { */
+/*     GList *org_groups = NULL, *ptr; */
+/*     CcnetOrgManager *org_mgr = ((CcnetServerSession *)(mgr->session))->org_mgr; */
     
-    org_groups = ccnet_org_manager_get_org_groups (org_mgr, org_id, -1, -1);
-    if (!org_groups)
-        return FALSE;
+/*     org_groups = ccnet_org_manager_get_org_groups (org_mgr, org_id, -1, -1); */
+/*     if (!org_groups) */
+/*         return FALSE; */
 
-    for (ptr = org_groups; ptr; ptr = ptr->next) {
-        int group_id = (int)(long)ptr->data;
-        CcnetGroup *group = ccnet_group_manager_get_group (mgr, group_id,
-                                                           NULL);
-        if (!group)
-            continue;
+/*     for (ptr = org_groups; ptr; ptr = ptr->next) { */
+/*         int group_id = (int)(long)ptr->data; */
+/*         CcnetGroup *group = ccnet_group_manager_get_group (mgr, group_id, */
+/*                                                            NULL); */
+/*         if (!group) */
+/*             continue; */
 
-        if (g_strcmp0 (group_name, ccnet_group_get_group_name(group)) == 0) {
-            g_list_free (org_groups);
-            g_object_unref (group);
-            return TRUE;
-        } else {
-            g_object_unref (group);
-        }
-    }
+/*         if (g_strcmp0 (group_name, ccnet_group_get_group_name(group)) == 0) { */
+/*             g_list_free (org_groups); */
+/*             g_object_unref (group); */
+/*             return TRUE; */
+/*         } else { */
+/*             g_object_unref (group); */
+/*         } */
+/*     } */
 
-    g_list_free (org_groups);
-    return FALSE;
-}
+/*     g_list_free (org_groups); */
+/*     return FALSE; */
+/* } */
 
 int ccnet_group_manager_create_org_group (CcnetGroupManager *mgr,
                                           int org_id,
@@ -322,11 +280,11 @@ int ccnet_group_manager_create_org_group (CcnetGroupManager *mgr,
 {
     CcnetOrgManager *org_mgr = ((CcnetServerSession *)(mgr->session))->org_mgr;
     
-    if (duplicate_org_group_name (mgr, org_id, group_name)) {
-        g_set_error (error, CCNET_DOMAIN, 0,
-                     "The group has already created in this org.");
-        return -1;
-    }
+    /* if (duplicate_org_group_name (mgr, org_id, group_name)) { */
+    /*     g_set_error (error, CCNET_DOMAIN, 0, */
+    /*                  "The group has already created in this org."); */
+    /*     return -1; */
+    /* } */
 
     int group_id = create_group_common (mgr, group_name, user_name, error);
     if (group_id < 0) {
@@ -500,10 +458,16 @@ int ccnet_group_manager_set_group_name (CcnetGroupManager *mgr,
 {
     CcnetDB *db = mgr->priv->db;
 
-    ccnet_db_statement_query (db,
-                              "UPDATE `Group` SET group_name = ? "
-                              "WHERE group_id = ?",
-                              2, "string", group_name, "int", group_id);
+    if (ccnet_db_type(db) == CCNET_DB_TYPE_PGSQL)
+        ccnet_db_statement_query (db,
+                                  "UPDATE \"Group\" SET group_name = ? "
+                                  "WHERE group_id = ?",
+                                  2, "string", group_name, "int", group_id);
+    else
+        ccnet_db_statement_query (db,
+                                  "UPDATE `Group` SET group_name = ? "
+                                  "WHERE group_id = ?",
+                                  2, "string", group_name, "int", group_id);
 
     return 0;
 }
@@ -537,35 +501,53 @@ int ccnet_group_manager_quit_group (CcnetGroupManager *mgr,
 }
 
 static gboolean
-get_group_ids_cb (CcnetDBRow *row, void *data)
+get_user_groups_cb (CcnetDBRow *row, void *data)
 {
     GList **plist = data;
+    CcnetGroup *group;
 
     int group_id = ccnet_db_row_get_column_int (row, 0);
+    const char *group_name = ccnet_db_row_get_column_text (row, 1);
+    const char *creator_name = ccnet_db_row_get_column_text (row, 2);
+    gint64 ts = ccnet_db_row_get_column_int64 (row, 3);
 
-    *plist = g_list_prepend (*plist, (gpointer)(long)group_id);
+    group = g_object_new (CCNET_TYPE_GROUP,
+                          "id", group_id,
+                          "group_name", group_name,
+                          "creator_name", creator_name,
+                          "timestamp", ts,
+                          "source", "DB",
+                          NULL);
+
+    *plist = g_list_prepend (*plist, group);
 
     return TRUE;
 }
 
 GList *
-ccnet_group_manager_get_groupids_by_user (CcnetGroupManager *mgr,
-                                          const char *user_name,
-                                          GError **error)
+ccnet_group_manager_get_groups_by_user (CcnetGroupManager *mgr,
+                                        const char *user_name,
+                                        GError **error)
 {
     CcnetDB *db = mgr->priv->db;
-    GList *group_ids = NULL;
+    GList *groups = NULL;
+    char *sql;
+
+    if (ccnet_db_type(db) == CCNET_DB_TYPE_PGSQL)
+        sql = "SELECT g.group_id, group_name, creator_name, timestamp FROM "
+            "\"Group\" g, GroupUser u WHERE g.group_id = u.group_id AND user_name=?";
+    else
+        sql = "SELECT g.group_id, group_name, creator_name, timestamp FROM "
+            "`Group` g, GroupUser u WHERE g.group_id = u.group_id AND user_name=?";
 
     if (ccnet_db_statement_foreach_row (db,
-                                        "SELECT group_id FROM GroupUser "
-                                        "WHERE user_name=?",
-                                        get_group_ids_cb, &group_ids,
+                                        sql,
+                                        get_user_groups_cb, &groups,
                                         1, "string", user_name) < 0) {
-        g_list_free (group_ids);
         return NULL;
     }
 
-    return g_list_reverse (group_ids);
+    return g_list_reverse (groups);
 }
 
 static gboolean
@@ -604,9 +586,11 @@ ccnet_group_manager_get_group (CcnetGroupManager *mgr, int group_id,
     CcnetGroup *ccnetgroup = NULL;
 
     if (ccnet_db_type(db) == CCNET_DB_TYPE_PGSQL)
-        sql = "SELECT * FROM \"Group\" WHERE group_id = ?";
+        sql = "SELECT group_id, group_name, creator_name, timestamp FROM "
+            "\"Group\" WHERE group_id = ?";
     else
-        sql = "SELECT * FROM `Group` WHERE group_id = ?";
+        sql = "SELECT group_id, group_name, creator_name, timestamp FROM "
+            "`Group` WHERE group_id = ?";
     if (ccnet_db_statement_foreach_row (db, sql,
                                         get_ccnetgroup_cb, &ccnetgroup,
                                         1, "int", group_id) < 0)
@@ -647,7 +631,7 @@ ccnet_group_manager_get_group_members (CcnetGroupManager *mgr, int group_id,
     char *sql;
     GList *group_users = NULL;
     
-    sql = "SELECT * FROM GroupUser WHERE group_id = ?";
+    sql = "SELECT group_id, user_name, is_staff FROM GroupUser WHERE group_id = ?";
     if (ccnet_db_statement_foreach_row (db, sql,
                                         get_ccnet_groupuser_cb, &group_users,
                                         1, "int", group_id) < 0)
