@@ -320,4 +320,7 @@ ccnet_rpc_login_relay (const char *relay_id, const char *email,
 int
 ccnet_rpc_logout_relay (const char *relay_id, GError **error);
 
+int
+ccnet_rpc_set_role_quota (const char *role, gint64 quota, GError **error);
+
 #endif /* RPC_SERVICE_H */

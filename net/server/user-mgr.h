@@ -154,4 +154,13 @@ ccnet_user_manager_get_binding_email (CcnetUserManager *manager, const char *pee
 GList *
 ccnet_user_manager_get_binding_peerids (CcnetUserManager *manager, const char *email);
 
+gint64
+ccnet_user_manager_get_role_quota (CcnetUserManager *manager,
+                                   const char *role);
+
+int
+ccnet_user_manager_set_role_quota (CcnetUserManager *manager,
+                                   const char *role,
+                                   gint64 quota);
+
 #endif

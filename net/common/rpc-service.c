@@ -108,7 +108,7 @@ ccnet_start_rpc(CcnetSession *session)
                                      ccnet_rpc_remove_role,
                                      "remove_role",
                                      searpc_signature_int__string_string());
-
+                                     
 
     searpc_server_register_function ("ccnet-rpcserver",
                                      ccnet_rpc_get_config,
@@ -280,6 +280,10 @@ ccnet_start_rpc(CcnetSession *session)
                                      ccnet_rpc_search_groups,
                                      "search_groups",
                                      searpc_signature_objlist__string_int_int());
+    searpc_server_register_function ("ccnet-threaded-rpcserver",
+                                     ccnet_rpc_set_role_quota,
+                                     "set_role_quota",
+                                     searpc_signature_int__string_int64());
 
     searpc_server_register_function ("ccnet-threaded-rpcserver",
                                      ccnet_rpc_create_org,
@@ -1530,5 +1534,18 @@ ccnet_rpc_set_org_name (int org_id, const char *org_name, GError **error)
     return ccnet_org_manager_set_org_name (org_mgr, org_id, org_name, error);
 }
 
+int
+ccnet_rpc_set_role_quota (const char *role, gint64 quota, GError **error)
+{
+    CcnetUserManager *user_mgr =
+            ((CcnetServerSession *)session)->user_mgr;
+
+    if (quota < 0 || !role) {
+        g_set_error (error, CCNET_DOMAIN, CCNET_ERR_INTERNAL, "Bad arguments");
+        return -1;
+    }
+
+    return ccnet_user_manager_set_role_quota (user_mgr, role, quota);
+}
 
 #endif  /* CCNET_SERVER */
