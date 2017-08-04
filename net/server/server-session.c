@@ -170,9 +170,11 @@ static int init_mysql_database (CcnetSession *session)
 
     max_connections = g_key_file_get_integer (session->keyf,
                                               "Database", "MAX_CONNECTIONS",
-                                              NULL);
-    if (max_connections <= 0)
+                                              &error);
+    if (error || max_connections < 0) {
         max_connections = DEFAULT_MAX_CONNECTIONS;
+        g_clear_error (&error);
+    }
 
     session->db = ccnet_db_new_mysql (host, port, user, passwd, db, unix_socket, use_ssl, charset, max_connections);
     if (!session->db) {
