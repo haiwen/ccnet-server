@@ -226,10 +226,21 @@ static int try_load_ldap_settings (CcnetUserManager *manager)
     if (!manager->login_attr)
         manager->login_attr = g_strdup("mail");
 
+    GError *error = NULL;
+    manager->follow_referrals = g_key_file_get_boolean (config,
+                                                        "LDAP", "FOLLOW_REFERRALS",
+                                                        &error);
+    if (error) {
+        /* Default is follow referrals. */
+        g_clear_error (&error);
+        manager->follow_referrals = TRUE;
+    }
+
     return 0;
 }
 
-static LDAP *ldap_init_and_bind (const char *host,
+static LDAP *ldap_init_and_bind (CcnetUserManager *manager,
+                                 const char *host,
 #ifdef WIN32
                                  gboolean use_ssl,
 #endif
@@ -263,6 +274,14 @@ static LDAP *ldap_init_and_bind (const char *host,
     res = ldap_set_option (ld, LDAP_OPT_PROTOCOL_VERSION, &desired_version);
     if (res != LDAP_OPT_SUCCESS) {
         ccnet_warning ("ldap_set_option failed: %s.\n", ldap_err2string(res));
+        return NULL;
+    }
+
+    res = ldap_set_option (ld, LDAP_OPT_REFERRALS,
+                           manager->follow_referrals ? LDAP_OPT_ON : LDAP_OPT_OFF);
+    if (res != LDAP_OPT_SUCCESS) {
+        ccnet_warning ("ldap_set_option referrals failed: %s.\n",
+                       ldap_err2string(res));
         return NULL;
     }
 
@@ -355,7 +374,8 @@ static int ldap_verify_user_password (CcnetUserManager *manager,
 
     /* First search for the DN with the given uid. */
 
-    ld = ldap_init_and_bind (manager->ldap_host,
+    ld = ldap_init_and_bind (manager,
+                             manager->ldap_host,
 #ifdef WIN32
                              manager->use_ssl,
 #endif
@@ -410,7 +430,8 @@ static int ldap_verify_user_password (CcnetUserManager *manager,
 
     ldap_unbind_s (ld);
 
-    ld = ldap_init_and_bind (manager->ldap_host,
+    ld = ldap_init_and_bind (manager,
+                             manager->ldap_host,
 #ifdef WIN32
                              manager->use_ssl,
 #endif
@@ -441,7 +462,8 @@ static GList *ldap_list_users (CcnetUserManager *manager, const char *uid,
     char *attrs[2];
     LDAPMessage *msg = NULL, *entry;
 
-    ld = ldap_init_and_bind (manager->ldap_host,
+    ld = ldap_init_and_bind (manager,
+                             manager->ldap_host,
 #ifdef WIN32
                              manager->use_ssl,
 #endif

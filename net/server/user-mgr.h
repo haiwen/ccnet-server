@@ -41,6 +41,7 @@ struct _CcnetUserManager
     char           *user_dn;    /* DN of the admin user */
     char           *password;   /* password for admin user */
     char           *login_attr;  /* attribute name used for login */
+    gboolean        follow_referrals; /* Follow referrals returned by the server. */
 #endif
 
     int passwd_hash_iter;
