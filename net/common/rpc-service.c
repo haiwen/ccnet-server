@@ -361,6 +361,14 @@ ccnet_start_rpc(CcnetSession *session)
                                      ccnet_rpc_set_org_name,
                                      "set_org_name",
                                      searpc_signature_int__int_string());
+    searpc_server_register_function ("ccnet-threaded-rpcserver",
+                                     ccnet_rpc_set_reference_id,
+                                     "set_reference_id",
+                                     searpc_signature_int__string_string());
+    searpc_server_register_function ("ccnet-threaded-rpcserver",
+                                     ccnet_rpc_get_primary_id,
+                                     "get_primary_id",
+                                     searpc_signature_string__string());
 
 
 #endif  /* CCNET_SERVER */
@@ -1530,5 +1538,20 @@ ccnet_rpc_set_org_name (int org_id, const char *org_name, GError **error)
     return ccnet_org_manager_set_org_name (org_mgr, org_id, org_name, error);
 }
 
+int
+ccnet_rpc_set_reference_id (const char *primary_id, const char *reference_id, GError **error)
+{
+    CcnetUserManager *user_mgr = ((CcnetServerSession *)session)->user_mgr;
+
+    return ccnet_user_manager_set_reference_id (user_mgr, primary_id, reference_id, error);
+}
+
+char *
+ccnet_rpc_get_primary_id (const char *email, GError **error)
+{
+    CcnetUserManager *user_mgr = ((CcnetServerSession *)session)->user_mgr;
+
+    return ccnet_user_manager_get_primary_id (user_mgr, email);
+}
 
 #endif  /* CCNET_SERVER */

@@ -561,7 +561,8 @@ static int check_db_table (CcnetDB *db)
             "id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, "
             "email VARCHAR(255), passwd VARCHAR(256), "
             "is_staff BOOL NOT NULL, is_active BOOL NOT NULL, "
-            "ctime BIGINT, UNIQUE INDEX (email))"
+            "ctime BIGINT, reference_id VARCHAR(255),"
+            "UNIQUE INDEX (email), UNIQUE INDEX (reference_id))"
             "ENGINE=INNODB";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
@@ -582,7 +583,8 @@ static int check_db_table (CcnetDB *db)
           "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
           "email VARCHAR(255) NOT NULL, password varchar(255) NOT NULL, "
           "is_staff BOOL NOT NULL, is_active BOOL NOT NULL, extra_attrs TEXT, "
-          "UNIQUE INDEX(email)) ENGINE=INNODB";
+          "reference_id VARCHAR(255), "
+          "UNIQUE INDEX(email), UNIQUE INDEX (reference_id)) ENGINE=INNODB";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
@@ -590,11 +592,16 @@ static int check_db_table (CcnetDB *db)
         sql = "CREATE TABLE IF NOT EXISTS EmailUser ("
             "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
             "email TEXT, passwd TEXT, is_staff bool NOT NULL, "
-            "is_active bool NOT NULL, ctime INTEGER)";
+            "is_active bool NOT NULL, ctime INTEGER, "
+            "reference_id TEXT)";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
         sql = "CREATE UNIQUE INDEX IF NOT EXISTS email_index on EmailUser (email)";
+        if (ccnet_db_query (db, sql) < 0)
+            return -1;
+
+        sql = "CREATE UNIQUE INDEX IF NOT EXISTS reference_id_index on EmailUser (reference_id)";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
@@ -625,11 +632,16 @@ static int check_db_table (CcnetDB *db)
         sql = "CREATE TABLE IF NOT EXISTS LDAPUsers ("
           "id INTEGER PRIMARY KEY AUTOINCREMENT, "
           "email TEXT NOT NULL, password TEXT NOT NULL, "
-          "is_staff BOOL NOT NULL, is_active BOOL NOT NULL, extra_attrs TEXT)";
+          "is_staff BOOL NOT NULL, is_active BOOL NOT NULL, extra_attrs TEXT, "
+          "reference_id TEXT)";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
         sql = "CREATE UNIQUE INDEX IF NOT EXISTS ldapusers_email_index on LDAPUsers(email)";
+        if (ccnet_db_query (db, sql) < 0)
+            return -1;
+
+        sql = "CREATE UNIQUE INDEX IF NOT EXISTS ldapusers_reference_id_index on LDAPUsers(reference_id)";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
@@ -638,9 +650,16 @@ static int check_db_table (CcnetDB *db)
             "id SERIAL PRIMARY KEY, "
             "email VARCHAR(255), passwd VARCHAR(256), "
             "is_staff INTEGER NOT NULL, is_active INTEGER NOT NULL, "
-            "ctime BIGINT, UNIQUE (email))";
+            "ctime BIGINT, reference_id VARCHAR(255), UNIQUE (email))";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
+
+        if (!pgsql_index_exists (db, "emailuser_reference_id_idx")) {
+            sql = "CREATE UNIQUE INDEX emailuser_reference_id_idx ON EmailUser (reference_id)";
+            if (ccnet_db_query (db, sql) < 0)
+                return -1;
+        }
+
         sql = "CREATE TABLE IF NOT EXISTS Binding (email VARCHAR(255), peer_id CHAR(41),"
             "UNIQUE (peer_id))";
         if (ccnet_db_query (db, sql) < 0)
@@ -660,12 +679,19 @@ static int check_db_table (CcnetDB *db)
         sql = "CREATE TABLE IF NOT EXISTS LDAPUsers ("
           "id SERIAL PRIMARY KEY, "
           "email VARCHAR(255) NOT NULL, password VARCHAR(255) NOT NULL, "
-          "is_staff SMALLINT NOT NULL, is_active SMALLINT NOT NULL, extra_attrs TEXT)";
+          "is_staff SMALLINT NOT NULL, is_active SMALLINT NOT NULL, extra_attrs TEXT,"
+          "reference_id VARCHAR(255))";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
         if (!pgsql_index_exists (db, "ldapusers_email_idx")) {
             sql = "CREATE UNIQUE INDEX ldapusers_email_idx ON LDAPUsers (email)";
+            if (ccnet_db_query (db, sql) < 0)
+                return -1;
+        }
+
+        if (!pgsql_index_exists (db, "ldapusers_reference_id_idx")) {
+            sql = "CREATE UNIQUE INDEX ldapusers_reference_id_idx ON LDAPUsers (reference_id)";
             if (ccnet_db_query (db, sql) < 0)
                 return -1;
         }
@@ -966,8 +992,10 @@ ccnet_user_manager_validate_emailuser (CcnetUserManager *manager,
                                        const char *passwd)
 {
     CcnetDB *db = manager->priv->db;
+    int ret = -1;
     char *sql;
     char *email_down;
+    char *login_id;
     char *stored_passwd = NULL;
     gboolean need_upgrade = FALSE;
 
@@ -975,46 +1003,57 @@ ccnet_user_manager_validate_emailuser (CcnetUserManager *manager,
     if (g_strcmp0 (passwd, "!") == 0)
         return -1;
 
+    login_id = ccnet_user_manager_get_login_id (manager, email);
+    if (!login_id) {
+        ccnet_warning ("Failed to get login_id for %s\n", email);
+        return -1;
+    }
+
 #ifdef HAVE_LDAP
     if (manager->use_ldap) {
-        if (ldap_verify_user_password (manager, email, passwd) == 0)
-            return 0;
+        if (ldap_verify_user_password (manager, login_id, passwd) == 0) {
+            ret = 0;
+            goto out;
+        }
     }
 #endif
 
     sql = "SELECT passwd FROM EmailUser WHERE email=?";
     if (ccnet_db_statement_foreach_row (db, sql,
                                         get_password, &stored_passwd,
-                                        1, "string", email) > 0) {
+                                        1, "string", login_id) > 0) {
         if (validate_passwd (passwd, stored_passwd, &need_upgrade)) {
             if (need_upgrade)
-                update_user_passwd (manager, email, passwd);
-            g_free (stored_passwd);
-            return 0;
+                update_user_passwd (manager, login_id, passwd);
+            ret = 0;
+            goto out;
         } else {
-            g_free (stored_passwd);
-            return -1;
+            goto out;
         }
     }
 
-    email_down = g_ascii_strdown (email, strlen(email));
+    email_down = g_ascii_strdown (email, strlen(login_id));
     if (ccnet_db_statement_foreach_row (db, sql,
                                         get_password, &stored_passwd,
                                         1, "string", email_down) > 0) {
         g_free (email_down);
         if (validate_passwd (passwd, stored_passwd, &need_upgrade)) {
             if (need_upgrade)
-                update_user_passwd (manager, email, passwd);
-            g_free (stored_passwd);
-            return 0;
+                update_user_passwd (manager, login_id, passwd);
+            ret = 0;
+            goto out;
         } else {
-            g_free (stored_passwd);
-            return -1;
+            goto out;
         }
     }
     g_free (email_down);
 
-    return -1;
+out:
+
+    g_free (login_id);
+    g_free (stored_passwd);
+
+    return ret;
 }
 
 static gboolean
@@ -1028,6 +1067,8 @@ get_emailuser_cb (CcnetDBRow *row, void *data)
     int is_active = ccnet_db_row_get_column_int (row, 3);
     gint64 ctime = ccnet_db_row_get_column_int64 (row, 4);
     const char *password = ccnet_db_row_get_column_text (row, 5);
+    const char *reference_id = ccnet_db_row_get_column_text (row, 6);
+    const char *role = ccnet_db_row_get_column_text (row, 7);
 
     char *email_l = g_ascii_strdown (email, -1);
     *p_emailuser = g_object_new (CCNET_TYPE_EMAIL_USER,
@@ -1038,6 +1079,8 @@ get_emailuser_cb (CcnetDBRow *row, void *data)
                                  "ctime", ctime,
                                  "source", "DB",
                                  "password", password,
+                                 "reference_id", reference_id,
+                                 "role", role ? role : "",
                                  NULL);
     g_free (email_l);
 
@@ -1057,6 +1100,8 @@ get_ldap_emailuser_cb (CcnetDBRow *row, void *data)
     const char *email = (const char *)ccnet_db_row_get_column_text (row, 1);
     int is_staff = ccnet_db_row_get_column_int (row, 2);
     int is_active = ccnet_db_row_get_column_int (row, 3);
+    const char *reference_id = ccnet_db_row_get_column_text (row, 4);
+    const char *role = ccnet_db_row_get_column_text (row, 5);
 
     *p_emailuser = g_object_new (CCNET_TYPE_EMAIL_USER,
                                  "id", id,
@@ -1066,6 +1111,8 @@ get_ldap_emailuser_cb (CcnetDBRow *row, void *data)
                                  "ctime", (gint64)0,
                                  "source", "LDAPImport",
                                  "password", "!",
+                                 "reference_id", reference_id,
+                                 "role", role ? role : "",
                                  NULL);
 
     return FALSE;
@@ -1081,26 +1128,17 @@ get_emailuser (CcnetUserManager *manager,
     CcnetEmailUser *emailuser = NULL;
     char *email_down;
 
-    sql = "SELECT id, email, is_staff, is_active, ctime, passwd"
-        " FROM EmailUser WHERE email=?";
+    sql = "SELECT e.id, e.email, is_staff, is_active, ctime, passwd, reference_id, role "
+        " FROM EmailUser e LEFT JOIN UserRole ON e.email = UserRole.email "
+        " WHERE e.email=?";
     if (ccnet_db_statement_foreach_row (db, sql, get_emailuser_cb, &emailuser,
                                         1, "string", email) > 0) {
-        char *role = ccnet_user_manager_get_role_emailuser (manager, email);
-        if (role) {
-            g_object_set (emailuser, "role", role, NULL);
-            g_free (role);
-        }
         return emailuser;
     }
 
     email_down = g_ascii_strdown (email, strlen(email));
     if (ccnet_db_statement_foreach_row (db, sql, get_emailuser_cb, &emailuser,
                                         1, "string", email_down) > 0) {
-        char *role = ccnet_user_manager_get_role_emailuser(manager, email_down);
-        if (role) {
-            g_object_set (emailuser, "role", role, NULL);
-            g_free (role);
-        }
         g_free (email_down);
         return emailuser;
     }
@@ -1108,8 +1146,10 @@ get_emailuser (CcnetUserManager *manager,
 #ifdef HAVE_LDAP
     if (manager->use_ldap) {
         int ret = ccnet_db_statement_foreach_row (db,
-                                                  "SELECT id, email, is_staff, is_active "
-                                                  "FROM LDAPUsers WHERE email = ?",
+                                                  "SELECT l.id, l.email, is_staff, is_active, "
+                                                  "reference_id, role "
+                                                  "FROM LDAPUsers l LEFT JOIN UserRole ON "
+                                                  "l.email = UserRole.email WHERE l.email = ?",
                                                   get_ldap_emailuser_cb,
                                                   &emailuser, 1, "string", email_down);
         if (ret < 0) {
@@ -1157,11 +1197,6 @@ get_emailuser (CcnetUserManager *manager,
             }
         }
 
-        char *role = ccnet_user_manager_get_role_emailuser(manager, email_down);
-        if (role) {
-            g_object_set (emailuser, "role", role, NULL);
-            g_free (role);
-        }
         g_free (email_down);
         return emailuser;
     }
@@ -1194,8 +1229,9 @@ ccnet_user_manager_get_emailuser_by_id (CcnetUserManager *manager, int id)
     char *sql;
     CcnetEmailUser *emailuser = NULL;
 
-    sql = "SELECT id, email, is_staff, is_active, ctime, passwd"
-        " FROM EmailUser WHERE id=?";
+    sql = "SELECT e.id, e.email, is_staff, is_active, ctime, passwd, reference_id, role "
+        " FROM EmailUser e LEFT JOIN UserRole ON e.email = UserRole.email "
+        " WHERE e.id=?";
     if (ccnet_db_statement_foreach_row (db, sql, get_emailuser_cb, &emailuser,
                                         1, "int", id) < 0)
         return NULL;
@@ -1717,4 +1753,125 @@ ccnet_user_manager_get_superusers(CcnetUserManager *manager)
     }
 
     return g_list_reverse (ret);
+}
+
+int
+ccnet_user_manager_set_reference_id (CcnetUserManager *manager,
+                                   const char *primary_id,
+                                   const char *reference_id,
+                                   GError **error)
+{
+    int rc;
+    char *sql;
+    gboolean exists;
+
+#ifdef HAVE_LDAP
+    if (manager->use_ldap) {
+        sql = "SELECT email FROM LDAPUsers WHERE email = ?";
+        exists = ccnet_db_statement_exists (manager->priv->db, sql,
+                                            1, "string", primary_id);
+        /* Make sure reference_id is unique */
+        if (exists) {
+            sql = "SELECT 1 FROM EmailUser e, LDAPUsers l "
+                  "WHERE (e.reference_id=? AND e.email!=?) OR "
+                  "(l.reference_id=? AND l.email!=?) OR "
+                  "(e.email=? AND e.email!=?) OR (l.email=? AND l.email!=?)";
+            exists = ccnet_db_statement_exists (manager->priv->db, sql,
+                                                8, "string", reference_id,
+                                                "string", primary_id,
+                                                "string", reference_id,
+                                                "string", primary_id,
+                                                "string", reference_id,
+                                                "string", primary_id,
+                                                "string", reference_id,
+                                                "string", primary_id);
+            if (exists) {
+                ccnet_warning ("Failed to set reference id, email '%s' exists\n", reference_id);
+                return -1;
+            }
+
+            sql = "UPDATE LDAPUsers SET reference_id=? WHERE email=?";
+            rc = ccnet_db_statement_query (manager->priv->db, sql, 2,
+                                           "string", reference_id, "string", primary_id);
+            if (rc < 0){
+                ccnet_warning ("Failed to set reference id for '%s'\n", primary_id);
+            }
+            return rc;
+        }
+    }
+#endif
+
+    sql = "SELECT email FROM EmailUser WHERE email = ?";
+    exists = ccnet_db_statement_exists (manager->priv->db, sql,
+                                        1, "string", primary_id);
+    /* Make sure reference_id is unique */
+    if (exists) {
+        sql = "SELECT 1 FROM EmailUser e, LDAPUsers l "
+              "WHERE (e.reference_id=? AND e.email!=?) OR "
+              "(l.reference_id=? AND l.email!=?) OR "
+              "(e.email=? AND e.email!=?) OR (l.email=? AND l.email!=?)";
+        exists = ccnet_db_statement_exists (manager->priv->db, sql,
+                                            8, "string", reference_id,
+                                            "string", primary_id,
+                                            "string", reference_id,
+                                            "string", primary_id,
+                                            "string", reference_id,
+                                            "string", primary_id,
+                                            "string", reference_id,
+                                            "string", primary_id);
+        if (exists) {
+            ccnet_warning ("Failed to set reference id, email '%s' exists\n", reference_id);
+            return -1;
+        }
+
+        sql = "UPDATE EmailUser SET reference_id=? WHERE email=?";
+            rc = ccnet_db_statement_query (manager->priv->db, sql, 2,
+                                           "string", reference_id, "string", primary_id);
+        if (rc < 0){
+            ccnet_warning ("Failed to set reference id for %s\n", primary_id);
+            return -1;
+        }
+        return rc;
+    } else {
+        ccnet_warning ("Failed to set reference id, Primary id '%s' not exists\n", primary_id);
+        return -1;
+    }
+}
+
+char *
+ccnet_user_manager_get_primary_id (CcnetUserManager *manager, const char *email)
+{
+    char *sql;
+    char *primary_id = NULL;
+
+#ifdef HAVE_LDAP
+    if (manager->use_ldap) {
+        sql = "SELECT email FROM LDAPUsers WHERE reference_id=?";
+        primary_id = ccnet_db_statement_get_string (manager->priv->db, sql, 1, "string", email);
+        if (primary_id)
+            return primary_id;
+    }
+#endif
+
+    sql = "SELECT email FROM EmailUser WHERE reference_id=?";
+    primary_id = ccnet_db_statement_get_string (manager->priv->db, sql, 1, "string", email);
+    if (primary_id)
+        return primary_id;
+    else
+        return NULL;
+}
+
+char *
+ccnet_user_manager_get_login_id (CcnetUserManager *manager, const char *primary_id)
+{
+#ifdef HAVE_LDAP
+    if (manager->use_ldap) {
+        char *sql = "SELECT reference_id FROM LDAPUsers WHERE email=?";
+        char *ldap_login_id = ccnet_db_statement_get_string (manager->priv->db, sql, 1, "string", primary_id);
+
+        if (ldap_login_id)
+            return ldap_login_id;
+    }
+#endif
+    return g_strdup (primary_id);
 }

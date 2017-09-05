@@ -37,6 +37,7 @@ public class EmailUser : Object {
     public string source { get; set; }
     public string role { get; set; }
     public string password { get; set; }
+    public string reference_id { get; set; }
 }
 
 public class Group : Object {
