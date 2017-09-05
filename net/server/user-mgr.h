@@ -155,4 +155,17 @@ ccnet_user_manager_get_binding_email (CcnetUserManager *manager, const char *pee
 GList *
 ccnet_user_manager_get_binding_peerids (CcnetUserManager *manager, const char *email);
 
+int
+ccnet_user_manager_set_reference_id (CcnetUserManager *manager,
+                                     const char *primary_id,
+                                     const char *reference_id,
+                                     GError **error);
+
+char *
+ccnet_user_manager_get_primary_id (CcnetUserManager *manager,
+                                   const char *email);
+
+char *
+ccnet_user_manager_get_login_id (CcnetUserManager *manager,
+                                 const char *primary_id);
 #endif
