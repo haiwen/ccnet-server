@@ -588,6 +588,11 @@ static int check_db_table (CcnetDB *db)
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
+        sql = "CREATE TABLE IF NOT EXISTS LDAPConfig (cfg_group VARCHAR(255) NOT NULL,"
+          "cfg_key VARCHAR(255) NOT NULL, value VARCHAR(255), property INTEGER) ENGINE=INNODB";
+        if (ccnet_db_query (db, sql) < 0)
+            return -1;
+
     } else if (db_type == CCNET_DB_TYPE_SQLITE) {
         sql = "CREATE TABLE IF NOT EXISTS EmailUser ("
             "id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,"
@@ -645,6 +650,11 @@ static int check_db_table (CcnetDB *db)
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
+        sql = "CREATE TABLE IF NOT EXISTS LDAPConfig (cfg_group VARCHAR(255) NOT NULL,"
+          "cfg_key VARCHAR(255) NOT NULL, value VARCHAR(255), property INTEGER)";
+        if (ccnet_db_query (db, sql) < 0)
+            return -1;
+
     } else if (db_type == CCNET_DB_TYPE_PGSQL) {
         sql = "CREATE TABLE IF NOT EXISTS EmailUser ("
             "id SERIAL PRIMARY KEY, "
@@ -695,6 +705,11 @@ static int check_db_table (CcnetDB *db)
             if (ccnet_db_query (db, sql) < 0)
                 return -1;
         }
+
+        sql = "CREATE TABLE IF NOT EXISTS LDAPConfig (cfg_group VARCHAR(255) NOT NULL,"
+          "cfg_key VARCHAR(255) NOT NULL, value VARCHAR(255), property INTEGER)";
+        if (ccnet_db_query (db, sql) < 0)
+            return -1;
     }
 
     return 0;
