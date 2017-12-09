@@ -240,10 +240,10 @@ ccnet_org_manager_remove_org (CcnetOrgManager *mgr,
     ccnet_db_statement_query (db, "DELETE FROM Organization WHERE org_id = ?",
                               1, "int", org_id);
 
-    ccnet_db_statement_query (db, "DELETE FROM OrgUser WHERE org_id = %d",
+    ccnet_db_statement_query (db, "DELETE FROM OrgUser WHERE org_id = ?",
                               1, "int", org_id);
 
-    ccnet_db_statement_query (db, "DELETE FROM OrgGroup WHERE org_id = %d",
+    ccnet_db_statement_query (db, "DELETE FROM OrgGroup WHERE org_id = ?",
                               1, "int", org_id);
 
     return 0;
