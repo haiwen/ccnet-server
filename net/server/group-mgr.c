@@ -11,6 +11,8 @@
 #include "utils.h"
 #include "log.h"
 
+extern CcnetSession *session;
+
 struct _CcnetGroupManagerPriv {
     CcnetDB	*db;
     const char *table_name;
@@ -105,7 +107,7 @@ static int check_db_table (CcnetGroupManager *manager, CcnetDB *db)
             "CREATE TABLE IF NOT EXISTS `%s` (`group_id` INTEGER"
             " PRIMARY KEY AUTO_INCREMENT, `group_name` VARCHAR(255),"
             " `creator_name` VARCHAR(255), `timestamp` BIGINT,"
-            " `type` VARCHAR(32))"
+            " `type` VARCHAR(32), `parent_group_id` INTEGER)"
             "ENGINE=INNODB", table_name);
         if (ccnet_db_query (db, group_sql->str) < 0) {
             g_string_free (group_sql, TRUE);
@@ -190,6 +192,7 @@ static int
 create_group_common (CcnetGroupManager *mgr,
                      const char *group_name,
                      const char *user_name,
+                     int parent_group_id,
                      GError **error)
 {
     CcnetDB *db = mgr->priv->db;
@@ -203,15 +206,15 @@ create_group_common (CcnetGroupManager *mgr,
     if (ccnet_db_type(db) == CCNET_DB_TYPE_PGSQL)
         g_string_printf (sql,
             "INSERT INTO \"%s\"(group_name, "
-            "creator_name, timestamp) VALUES(?, ?, ?)", table_name);
+            "creator_name, timestamp, parent_group_id) VALUES(?, ?, ?, ?)", table_name);
     else
         g_string_printf (sql,
             "INSERT INTO `%s`(group_name, "
-            "creator_name, timestamp) VALUES(?, ?, ?)", table_name);
+            "creator_name, timestamp, parent_group_id) VALUES(?, ?, ?, ?)", table_name);
 
-    if (ccnet_db_statement_query (db, sql->str, 3,
+    if (ccnet_db_statement_query (db, sql->str, 4,
                                   "string", group_name, "string", user_name_l,
-                                  "int64", now) < 0) {
+                                  "int64", now, "int", parent_group_id) < 0) {
         g_set_error (error, CCNET_DOMAIN, 0, "Failed to create group");
         goto out;
     }
@@ -259,9 +262,10 @@ out:
 int ccnet_group_manager_create_group (CcnetGroupManager *mgr,
                                       const char *group_name,
                                       const char *user_name,
+                                      int parent_group_id,
                                       GError **error)
 {
-    return create_group_common (mgr, group_name, user_name, error);
+    return create_group_common (mgr, group_name, user_name, parent_group_id, error);
 }
 
 /* static gboolean */
@@ -300,6 +304,7 @@ int ccnet_group_manager_create_org_group (CcnetGroupManager *mgr,
                                           int org_id,
                                           const char *group_name,
                                           const char *user_name,
+                                          int parent_group_id,
                                           GError **error)
 {
     CcnetOrgManager *org_mgr = ((CcnetServerSession *)(mgr->session))->org_mgr;
@@ -310,7 +315,7 @@ int ccnet_group_manager_create_org_group (CcnetGroupManager *mgr,
     /*     return -1; */
     /* } */
 
-    int group_id = create_group_common (mgr, group_name, user_name, error);
+    int group_id = create_group_common (mgr, group_name, user_name, parent_group_id, error);
     if (group_id < 0) {
         g_set_error (error, CCNET_DOMAIN, 0, "Failed to create org group.");
         return -1;
@@ -336,15 +341,29 @@ check_group_staff (CcnetDB *db, int group_id, const char *user_name)
 
 int ccnet_group_manager_remove_group (CcnetGroupManager *mgr,
                                       int group_id,
+                                      gboolean remove_anyway,
                                       GError **error)
 {
     CcnetDB *db = mgr->priv->db;
     GString *sql = g_string_new ("");
+    gboolean exists;
     const char *table_name = mgr->priv->table_name;
 
     /* No permission check here, since both group staff and seahub staff
      * can remove group.
      */
+     if (remove_anyway != TRUE) {
+        if (ccnet_db_type(db) == CCNET_DB_TYPE_PGSQL)
+            g_string_printf (sql, "SELECT 1 FROM \"%s\" WHERE parent_group_id=?", table_name);
+        else
+            g_string_printf (sql, "SELECT 1 FROM `%s` WHERE parent_group_id=?", table_name);
+        exists = ccnet_db_statement_exists (db, sql->str, 1, "int", group_id);
+        if (exists) {
+            ccnet_warning ("Failed to remove group [%d] whose child group must be removed first.\n", group_id);
+            g_string_free (sql, TRUE);
+            return -1;
+        }
+     }
     
     if (ccnet_db_type(db) == CCNET_DB_TYPE_PGSQL)
         g_string_printf (sql, "DELETE FROM \"%s\" WHERE group_id=?", table_name);
@@ -538,7 +557,7 @@ int ccnet_group_manager_quit_group (CcnetGroupManager *mgr,
 }
 
 static gboolean
-get_user_groups_cb (CcnetDBRow *row, void *data)
+get_all_child_groups_cb (CcnetDBRow *row, void *data)
 {
     GList **plist = data;
     CcnetGroup *group;
@@ -547,6 +566,7 @@ get_user_groups_cb (CcnetDBRow *row, void *data)
     const char *group_name = ccnet_db_row_get_column_text (row, 1);
     const char *creator_name = ccnet_db_row_get_column_text (row, 2);
     gint64 ts = ccnet_db_row_get_column_int64 (row, 3);
+    int parent_group_id = ccnet_db_row_get_column_int (row, 4);
 
     group = g_object_new (CCNET_TYPE_GROUP,
                           "id", group_id,
@@ -554,9 +574,110 @@ get_user_groups_cb (CcnetDBRow *row, void *data)
                           "creator_name", creator_name,
                           "timestamp", ts,
                           "source", "DB",
+                          "parent_group_id", parent_group_id,
                           NULL);
 
-    *plist = g_list_prepend (*plist, group);
+    *plist = g_list_append (*plist, group);
+
+    return TRUE;
+}
+
+GList *
+ccnet_group_manager_get_all_child_groups (CcnetGroupManager *mgr,
+                                          int group_id)
+{
+    GList *ret = NULL, *tmp_list = NULL, *ptr;
+    CcnetDB *db = mgr->priv->db;
+    GString *sql = g_string_new ("");
+    CcnetGroup *group;
+    const char *table_name = mgr->priv->table_name;
+
+    if (ccnet_db_type(db) == CCNET_DB_TYPE_PGSQL)
+        g_string_printf (sql, "SELECT group_id, group_name, creator_name, timestamp, parent_group_id FROM "
+                              "\"%s\" WHERE parent_group_id=?",
+                              table_name);
+    else
+        g_string_printf (sql, "SELECT group_id, group_name, creator_name, timestamp, parent_group_id FROM "
+                              "`%s` WHERE parent_group_id=?",
+                              table_name);
+
+    if (ccnet_db_statement_foreach_row (db,
+                                        sql->str,
+                                        get_all_child_groups_cb, &tmp_list,
+                                        1, "int", group_id) < 0) {
+        g_string_free (sql, TRUE);
+        return NULL;
+    }
+    g_string_free (sql, TRUE);
+
+    for (ptr = tmp_list; ptr; ptr = ptr->next) {
+        group = ptr->data;
+        ret = g_list_append (ret, group);
+
+        int tmp_group_id;
+        g_object_get (group, "id", &tmp_group_id, NULL);
+        GList *child_list = ccnet_group_manager_get_all_child_groups(mgr, tmp_group_id);
+        ret = g_list_concat (ret, child_list);
+    }
+    
+    return ret;
+}
+
+GList *
+ccnet_group_manager_get_all_parent_groups (CcnetGroupManager *mgr, int group_id)
+{
+    GList *ret = NULL;
+    CcnetGroup *group = NULL;
+
+    while (group_id > 0) {
+        group = ccnet_group_manager_get_group (mgr, group_id, NULL);
+        if (group) {
+            ret = g_list_prepend (ret, group);
+            g_object_get(group, "parent_group_id", &group_id, NULL);
+        } else {
+            break;
+        }
+    }
+
+    return ret;
+}
+
+static gboolean
+get_user_groups_cb (CcnetDBRow *row, void *data)
+{
+    GList **plist = data;
+    CcnetGroup *group, *end_flag;
+    CcnetGroupManager *group_mgr = ((CcnetServerSession *)session)->group_mgr;
+
+    int group_id = ccnet_db_row_get_column_int (row, 0);
+    const char *group_name = ccnet_db_row_get_column_text (row, 1);
+    const char *creator_name = ccnet_db_row_get_column_text (row, 2);
+    gint64 ts = ccnet_db_row_get_column_int64 (row, 3);
+    int parent_group_id = ccnet_db_row_get_column_int (row, 4);
+
+    group = g_object_new (CCNET_TYPE_GROUP,
+                          "id", group_id,
+                          "group_name", group_name,
+                          "creator_name", creator_name,
+                          "timestamp", ts,
+                          "source", "DB",
+                          "parent_group_id", parent_group_id,
+                          "is_direct", TRUE,
+                          NULL);
+
+    /* Get all parent groups */
+    GList *parent_list = ccnet_group_manager_get_all_parent_groups(group_mgr, parent_group_id);
+
+    /* Get all child groups */
+    GList *child_list = ccnet_group_manager_get_all_child_groups(group_mgr, group_id);
+
+    parent_list = g_list_append (parent_list, group);
+    parent_list = g_list_concat (parent_list, child_list);
+    end_flag = g_object_new (CCNET_TYPE_GROUP,
+                             "id", -1, NULL);
+    parent_list = g_list_append (parent_list, end_flag);
+    
+    *plist = g_list_concat (*plist, parent_list);
 
     return TRUE;
 }
@@ -573,12 +694,12 @@ ccnet_group_manager_get_groups_by_user (CcnetGroupManager *mgr,
 
     if (ccnet_db_type(db) == CCNET_DB_TYPE_PGSQL)
         g_string_printf (sql, 
-            "SELECT g.group_id, group_name, creator_name, timestamp FROM "
+            "SELECT g.group_id, group_name, creator_name, timestamp, parent_group_id FROM "
             "\"%s\" g, GroupUser u WHERE g.group_id = u.group_id AND user_name=?",
             table_name);
     else
         g_string_printf (sql,
-            "SELECT g.group_id, group_name, creator_name, timestamp FROM "
+            "SELECT g.group_id, group_name, creator_name, timestamp, parent_group_id FROM "
             "`%s` g, GroupUser u WHERE g.group_id = u.group_id AND user_name=?",
             table_name);
 
@@ -591,7 +712,7 @@ ccnet_group_manager_get_groups_by_user (CcnetGroupManager *mgr,
     }
     g_string_free (sql, TRUE);
 
-    return g_list_reverse (groups);
+    return groups;
 }
 
 static gboolean
@@ -601,12 +722,14 @@ get_ccnetgroup_cb (CcnetDBRow *row, void *data)
     int group_id;
     const char *group_name;
     const char *creator;
+    int parent_group_id;
     gint64 ts;
     
     group_id = ccnet_db_row_get_column_int (row, 0);
     group_name = (const char *)ccnet_db_row_get_column_text (row, 1);
     creator = (const char *)ccnet_db_row_get_column_text (row, 2);
     ts = ccnet_db_row_get_column_int64 (row, 3);
+    parent_group_id = ccnet_db_row_get_column_int (row, 4);
 
     char *creator_l = g_ascii_strdown (creator, -1);
     *p_group = g_object_new (CCNET_TYPE_GROUP,
@@ -615,6 +738,7 @@ get_ccnetgroup_cb (CcnetDBRow *row, void *data)
                              "creator_name", creator_l,
                              "timestamp", ts,
                              "source", "DB",
+                             "parent_group_id", parent_group_id,
                              NULL);
     g_free (creator_l);
 
@@ -632,11 +756,11 @@ ccnet_group_manager_get_group (CcnetGroupManager *mgr, int group_id,
 
     if (ccnet_db_type(db) == CCNET_DB_TYPE_PGSQL)
         g_string_printf (sql,
-            "SELECT group_id, group_name, creator_name, timestamp FROM "
+            "SELECT group_id, group_name, creator_name, timestamp, parent_group_id FROM "
             "\"%s\" WHERE group_id = ?", table_name);
     else
         g_string_printf (sql,
-            "SELECT group_id, group_name, creator_name, timestamp FROM "
+            "SELECT group_id, group_name, creator_name, timestamp, parent_group_id FROM "
             "`%s` WHERE group_id = ?", table_name);
     if (ccnet_db_statement_foreach_row (db, sql->str,
                                         get_ccnetgroup_cb, &ccnetgroup,
