@@ -211,11 +211,11 @@ ccnet_start_rpc(CcnetSession *session)
     searpc_server_register_function ("ccnet-threaded-rpcserver",
                                      ccnet_rpc_create_group,
                                      "create_group",
-                                     searpc_signature_int__string_string_string());
+                                     searpc_signature_int__string_string_string_int());
     searpc_server_register_function ("ccnet-threaded-rpcserver",
                                      ccnet_rpc_create_org_group,
                                      "create_org_group",
-                                 searpc_signature_int__int_string_string());
+                                 searpc_signature_int__int_string_string_int());
     searpc_server_register_function ("ccnet-threaded-rpcserver",
                                      ccnet_rpc_remove_group,
                                      "remove_group",
@@ -930,7 +930,7 @@ ccnet_rpc_verify_message (const char *message,
 
 int
 ccnet_rpc_create_group (const char *group_name, const char *user_name,
-                        const char *type, GError **error)
+                        const char *type, int parent_group_id, GError **error)
 {
     CcnetGroupManager *group_mgr = 
         ((CcnetServerSession *)session)->group_mgr;
@@ -942,14 +942,14 @@ ccnet_rpc_create_group (const char *group_name, const char *user_name,
         return -1;
     }
 
-    ret = ccnet_group_manager_create_group (group_mgr, group_name, user_name, error);
+    ret = ccnet_group_manager_create_group (group_mgr, group_name, user_name, parent_group_id, error);
 
     return ret;
 }
 
 int
 ccnet_rpc_create_org_group (int org_id, const char *group_name,
-                            const char *user_name, GError **error)
+                            const char *user_name, int parent_group_id, GError **error)
 {
     CcnetGroupManager *group_mgr = 
         ((CcnetServerSession *)session)->group_mgr;
@@ -961,7 +961,7 @@ ccnet_rpc_create_org_group (int org_id, const char *group_name,
     }
 
     ret = ccnet_group_manager_create_org_group (group_mgr, org_id,
-                                                group_name, user_name, error);
+                                                group_name, user_name, parent_group_id, error);
 
     return ret;
 }
@@ -979,7 +979,7 @@ ccnet_rpc_remove_group (int group_id, GError **error)
         return -1;
     }
 
-    ret = ccnet_group_manager_remove_group (group_mgr, group_id, error);
+    ret = ccnet_group_manager_remove_group (group_mgr, group_id, FALSE, error);
 
     return ret;
     
@@ -1259,7 +1259,7 @@ ccnet_rpc_remove_org (int org_id, GError **error)
     group_ids = ccnet_org_manager_get_org_group_ids (org_mgr, org_id, 0, INT_MAX);
     ptr = group_ids;
     while (ptr) {
-        ccnet_group_manager_remove_group (group_mgr, (int)(long)ptr->data, error);
+        ccnet_group_manager_remove_group (group_mgr, (int)(long)ptr->data, TRUE, error);
         ptr = ptr->next;
     }
     g_list_free (group_ids);

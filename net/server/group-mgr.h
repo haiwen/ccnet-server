@@ -27,16 +27,19 @@ void ccnet_group_manager_start (CcnetGroupManager *manager);
 int ccnet_group_manager_create_group (CcnetGroupManager *mgr,
                                       const char *group_name,
                                       const char *user_name,
+                                      int parent_group_id,
                                       GError **error);
 
 int ccnet_group_manager_create_org_group (CcnetGroupManager *mgr,
                                           int org_id,
                                           const char *group_name,
                                           const char *user_name,
+                                          int parent_group_id,
                                           GError **error);
 
 int ccnet_group_manager_remove_group (CcnetGroupManager *mgr,
                                       int group_id,
+                                      gboolean remove_anyway,
                                       GError **error);
 
 int ccnet_group_manager_add_member (CcnetGroupManager *mgr,

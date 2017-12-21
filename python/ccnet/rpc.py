@@ -259,12 +259,12 @@ class CcnetThreadedRpcClient(RpcClientBase):
     def get_peers_by_email(self, email):
         pass
 
-    @searpc_func("int", ["string", "string", "string"])
-    def create_group(self, group_name, user_name, gtype):
+    @searpc_func("int", ["string", "string", "string", "int"])
+    def create_group(self, group_name, user_name, gtype, parent_group_id):
         pass
 
-    @searpc_func("int", ["int", "string", "string"])
-    def create_org_group(self, org_id, group_name, user_name):
+    @searpc_func("int", ["int", "string", "string", "int"])
+    def create_org_group(self, org_id, group_name, user_name, parent_group_id):
         pass
     
     @searpc_func("int", ["int"])
