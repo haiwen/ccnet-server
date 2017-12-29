@@ -663,6 +663,30 @@ ccnet_org_manager_get_org_groups (CcnetOrgManager *mgr,
     return g_list_reverse (ret);
 }
 
+GList *
+ccnet_org_manager_get_org_groups_by_user (CcnetOrgManager *mgr,
+                                          const char *user,
+                                          int org_id)
+{
+    CcnetDB *db = mgr->priv->db;
+    char *sql;
+    GList *ret = NULL;
+    int rc;
+
+    sql = "SELECT g.group_id, group_name, creator_name, timestamp FROM "
+          "OrgGroup o, `Group` g, GroupUser u "
+          "WHERE o.group_id = g.group_id AND org_id = ? AND "
+          "g.group_id = u.group_id AND user_name = ?";
+    rc = ccnet_db_statement_foreach_row (db,
+                                         sql,
+                                         get_org_groups, &ret,
+                                         2, "int", org_id, "string", user);
+    if (rc < 0)
+        return NULL;
+
+    return g_list_reverse (ret);
+}
+
 int
 ccnet_org_manager_org_user_exists (CcnetOrgManager *mgr,
                                    int org_id,

@@ -286,6 +286,9 @@ ccnet_rpc_get_org_id_by_group (int group_id, GError **error);
 GList *
 ccnet_rpc_get_org_groups (int org_id, int start, int limit, GError **error);
 
+GList *
+ccnet_rpc_get_org_groups_by_user (const char *user, int org_id, GError **error);
+
 int
 ccnet_rpc_org_user_exists (int org_id, const char *email, GError **error);
 
