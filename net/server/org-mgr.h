@@ -109,6 +109,11 @@ ccnet_org_manager_get_org_groups (CcnetOrgManager *mgr,
                                   int start,
                                   int limit);
 
+GList *
+ccnet_org_manager_get_org_groups_by_user (CcnetOrgManager *mgr,
+                                          const char *user,
+                                          int org_id);
+
 int
 ccnet_org_manager_org_user_exists (CcnetOrgManager *mgr,
                                    int org_id,

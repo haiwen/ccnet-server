@@ -192,6 +192,17 @@ ccnet_get_groups_by_user (SearpcClient *client, const char *user)
 }
 
 GList *
+ccnet_get_org_groups_by_user (SearpcClient *client, const char *user, int org_id)
+{
+    if (!user)
+        return NULL;
+
+    return searpc_client_call__objlist (
+        client, "get_org_groups_by_user", CCNET_TYPE_GROUP, NULL,
+        2, "string", user, "int", org_id);
+}
+
+GList *
 ccnet_get_group_members (SearpcClient *client, int group_id)
 {
     return searpc_client_call__objlist (
