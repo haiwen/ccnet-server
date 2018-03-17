@@ -181,11 +181,11 @@ ccnet_rpc_verify_message (const char *message,
 
 int
 ccnet_rpc_create_group (const char *group_name, const char *user_name,
-                        const char *type, GError **error);
+                        const char *type, int parent_group_id, GError **error);
 
 int
 ccnet_rpc_create_org_group (int org_id, const char *group_name,
-                            const char *user_name, GError **error);
+                            const char *user_name, int parent_group_id, GError **error);
 
 int
 ccnet_rpc_remove_group (int group_id, GError **error);
@@ -213,10 +213,19 @@ int
 ccnet_rpc_quit_group (int group_id, const char *user_name, GError **error);
 
 GList *
-ccnet_rpc_get_groups (const char *username, GError **error);
+ccnet_rpc_get_groups (const char *username, gboolean return_ancestors, GError **error);
 
 GList *
 ccnet_rpc_get_all_groups (int start, int limit, const char *source, GError **error);
+
+GList *
+ccnet_rpc_get_ancestor_groups (int group_id, GError **error);
+
+GList *
+ccnet_rpc_get_top_groups (GError **error);
+
+GList *
+ccnet_rpc_get_child_groups (int group_id, GError **error);
 
 GObject *
 ccnet_rpc_get_group (int group_id, GError **error);
@@ -288,6 +297,9 @@ ccnet_rpc_get_org_groups (int org_id, int start, int limit, GError **error);
 
 GList *
 ccnet_rpc_get_org_groups_by_user (const char *user, int org_id, GError **error);
+
+GList *
+ccnet_rpc_get_org_top_groups (int org_id, GError **error);
 
 int
 ccnet_rpc_org_user_exists (int org_id, const char *email, GError **error);

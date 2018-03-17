@@ -259,12 +259,12 @@ class CcnetThreadedRpcClient(RpcClientBase):
     def get_peers_by_email(self, email):
         pass
 
-    @searpc_func("int", ["string", "string", "string"])
-    def create_group(self, group_name, user_name, gtype):
+    @searpc_func("int", ["string", "string", "string", "int"])
+    def create_group(self, group_name, user_name, gtype, parent_group_id):
         pass
 
-    @searpc_func("int", ["int", "string", "string"])
-    def create_org_group(self, org_id, group_name, user_name):
+    @searpc_func("int", ["int", "string", "string", "int"])
+    def create_org_group(self, org_id, group_name, user_name, parent_group_id):
         pass
     
     @searpc_func("int", ["int"])
@@ -295,14 +295,26 @@ class CcnetThreadedRpcClient(RpcClientBase):
     def quit_group(self, group_id, user_name):
         pass
 
-    @searpc_func("objlist", ["string"])
-    def get_groups(self, user_name):
+    @searpc_func("objlist", ["string", "int"])
+    def get_groups(self, user_name, return_ancestors):
         pass
 
     @searpc_func("objlist", ["int", "int", "string"])
     def get_all_groups(self, start, limit, source):
         pass
+
+    @searpc_func("objlist", ["int"])
+    def get_ancestor_groups(self, group_id):
+        pass
+
+    @searpc_func("objlist", [])
+    def get_top_groups(self):
+        pass
     
+    @searpc_func("objlist", ["int"])
+    def get_child_groups(self, group_id):
+        pass
+
     @searpc_func("object", ["int"])
     def get_group(self, group_id):
         pass
@@ -393,6 +405,10 @@ class CcnetThreadedRpcClient(RpcClientBase):
     
     @searpc_func("objlist", ["string", "int"])
     def get_org_groups_by_user (self, user, org_id):
+        pass
+
+    @searpc_func("objlist", ["int"])
+    def get_org_top_groups(self, org_id):
         pass
 
     @searpc_func("int", ["int", "string"])
