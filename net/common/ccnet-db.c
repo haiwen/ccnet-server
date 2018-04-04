@@ -834,7 +834,7 @@ ccnet_db_rollback (CcnetDBTrans *trans)
     DBConnection *conn = trans->conn;
     GError *error = NULL;
 
-    if (!db_connection_commit (conn, &error)) {
+    if (!db_connection_rollback(conn, &error)) {
         ccnet_warning ("Rollback failed: %s.\n", error->message);
         g_clear_error (&error);
         return -1;

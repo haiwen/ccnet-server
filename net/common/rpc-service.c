@@ -1145,7 +1145,7 @@ ccnet_rpc_quit_group (int group_id, const char *user_name, GError **error)
 }
 
 GList *
-ccnet_rpc_get_groups (const char *username, gboolean return_ancestors, GError **error)
+ccnet_rpc_get_groups (const char *username, int return_ancestors, GError **error)
 {
     CcnetGroupManager *group_mgr = 
         ((CcnetServerSession *)session)->group_mgr;
@@ -1157,7 +1157,8 @@ ccnet_rpc_get_groups (const char *username, gboolean return_ancestors, GError **
         return NULL;
     }
 
-    ret = ccnet_group_manager_get_groups_by_user (group_mgr, username, return_ancestors, error);
+    ret = ccnet_group_manager_get_groups_by_user (group_mgr, username,
+                                                  return_ancestors ? TRUE : FALSE, error);
     return ret;
 }
 

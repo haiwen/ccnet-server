@@ -213,7 +213,7 @@ int
 ccnet_rpc_quit_group (int group_id, const char *user_name, GError **error);
 
 GList *
-ccnet_rpc_get_groups (const char *username, gboolean return_ancestors, GError **error);
+ccnet_rpc_get_groups (const char *username, int return_ancestors, GError **error);
 
 GList *
 ccnet_rpc_get_all_groups (int start, int limit, const char *source, GError **error);
