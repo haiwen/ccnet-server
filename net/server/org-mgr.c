@@ -613,6 +613,7 @@ get_org_groups (CcnetDBRow *row, void *data)
     const char *group_name = ccnet_db_row_get_column_text (row, 1);
     const char *creator_name = ccnet_db_row_get_column_text (row, 2);
     gint64 ts = ccnet_db_row_get_column_int64 (row, 3);
+    int parent_group_id = ccnet_db_row_get_column_int (row, 4);
 
     group = g_object_new (CCNET_TYPE_GROUP,
                           "id", group_id,
@@ -620,11 +621,33 @@ get_org_groups (CcnetDBRow *row, void *data)
                           "creator_name", creator_name,
                           "timestamp", ts,
                           "source", "DB",
+                          "parent_group_id", parent_group_id,
                           NULL);
 
     *plist = g_list_prepend (*plist, group);
 
     return TRUE;
+}
+
+GList *
+ccnet_org_manager_get_org_top_groups (CcnetOrgManager *mgr, int org_id, GError **error)
+{
+    CcnetDB *db = mgr->priv->db;
+    GList *ret = NULL;
+    char *sql;
+    int rc;
+
+    sql = "SELECT g.group_id, group_name, creator_name, timestamp, parent_group_id FROM "
+          "`OrgGroup` o, `Group` g WHERE o.group_id = g.group_id AND "
+          "org_id=? AND parent_group_id=-1 ORDER BY timestamp DESC";
+
+    rc = ccnet_db_statement_foreach_row (db, sql,
+                                         get_org_groups, &ret,
+                                         1, "int", org_id);
+    if (rc < 0)
+        return NULL;
+
+    return g_list_reverse (ret);
 }
 
 GList *
@@ -639,14 +662,14 @@ ccnet_org_manager_get_org_groups (CcnetOrgManager *mgr,
     int rc;
 
     if (limit == -1) {
-        sql = "SELECT g.group_id, group_name, creator_name, timestamp FROM "
+        sql = "SELECT g.group_id, group_name, creator_name, timestamp, parent_group_id FROM "
             "OrgGroup o, `Group` g WHERE o.group_id = g.group_id AND org_id = ?";
         rc = ccnet_db_statement_foreach_row (db,
                                              sql,
                                              get_org_groups, &ret,
                                              1, "int", org_id);
     } else {
-        sql = "SELECT g.group_id, group_name, creator_name, timestamp FROM "
+        sql = "SELECT g.group_id, group_name, creator_name, timestamp, parent_group_id FROM "
             "OrgGroup o, `Group` g WHERE o.group_id = g.group_id AND org_id = ? "
             "LIMIT ? OFFSET ?";
         rc = ccnet_db_statement_foreach_row (db,

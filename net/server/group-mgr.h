@@ -27,16 +27,19 @@ void ccnet_group_manager_start (CcnetGroupManager *manager);
 int ccnet_group_manager_create_group (CcnetGroupManager *mgr,
                                       const char *group_name,
                                       const char *user_name,
+                                      int parent_group_id,
                                       GError **error);
 
 int ccnet_group_manager_create_org_group (CcnetGroupManager *mgr,
                                           int org_id,
                                           const char *group_name,
                                           const char *user_name,
+                                          int parent_group_id,
                                           GError **error);
 
 int ccnet_group_manager_remove_group (CcnetGroupManager *mgr,
                                       int group_id,
+                                      gboolean remove_anyway,
                                       GError **error);
 
 int ccnet_group_manager_add_member (CcnetGroupManager *mgr,
@@ -74,6 +77,7 @@ int ccnet_group_manager_quit_group (CcnetGroupManager *mgr,
 GList *
 ccnet_group_manager_get_groups_by_user (CcnetGroupManager *mgr,
                                         const char *user_name,
+                                        gboolean return_ancestors,
                                         GError **error);
 
 CcnetGroup *
@@ -111,5 +115,16 @@ GList*
 ccnet_group_manager_search_groups (CcnetGroupManager *mgr,
                                    const char *keyword,
                                    int start, int limit);
+
+GList *
+ccnet_group_manager_get_top_groups (CcnetGroupManager *mgr, GError **error);
+
+GList *
+ccnet_group_manager_get_child_groups (CcnetGroupManager *mgr, int group_id,
+                                      GError **error);
+
+GList *
+ccnet_group_manager_get_ancestor_groups (CcnetGroupManager *mgr, int group_id);
+
 #endif /* GROUP_MGR_H */
 
