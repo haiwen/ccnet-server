@@ -90,7 +90,7 @@ static int check_db_table (CcnetDB *db)
 
     int db_type = ccnet_db_type (db);
     if (db_type == CCNET_DB_TYPE_MYSQL) {
-        sql = "CREATE TABLE IF NOT EXISTS Organization (org_id INTEGER"
+        sql = "CREATE TABLE IF NOT EXISTS Organization (org_id BIGINT"
             " PRIMARY KEY AUTO_INCREMENT, org_name VARCHAR(255),"
             " url_prefix VARCHAR(255), creator VARCHAR(255), ctime BIGINT,"
             " UNIQUE INDEX (url_prefix))"
@@ -98,16 +98,18 @@ static int check_db_table (CcnetDB *db)
         if (ccnet_db_query (db, sql) < 0)
             return -1;
         
-        sql = "CREATE TABLE IF NOT EXISTS OrgUser (org_id INTEGER, "
+        sql = "CREATE TABLE IF NOT EXISTS OrgUser ( "
+            "id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT, org_id INTEGER, "
             "email VARCHAR(255), is_staff BOOL NOT NULL, "
-            "INDEX (email), PRIMARY KEY (org_id, email))"
+            "INDEX (email), UNIQUE INDEX(org_id, email))"
             "ENGINE=INNODB";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
-        sql = "CREATE TABLE IF NOT EXISTS OrgGroup (org_id INTEGER, "
+        sql = "CREATE TABLE IF NOT EXISTS OrgGroup ("
+            "id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT, org_id INTEGER, "
             "group_id INTEGER, INDEX (group_id), "
-            "PRIMARY KEY (org_id, group_id))"
+            "UNIQUE INDEX(org_id, group_id))"
             "ENGINE=INNODB";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
@@ -218,7 +220,7 @@ int ccnet_org_manager_create_org (CcnetOrgManager *mgr,
         return -1;
     }
 
-    rc = ccnet_db_statement_query (db, "INSERT INTO OrgUser values (?, ?, ?)",
+    rc = ccnet_db_statement_query (db, "INSERT INTO OrgUser (org_id, email, is_staff) values (?, ?, ?)",
                                    3, "int", org_id, "string", creator, "int", 1);
     if (rc < 0) {
         ccnet_db_statement_query (db, "DELETE FROM Organization WHERE org_id=?",
@@ -395,7 +397,7 @@ ccnet_org_manager_add_org_user (CcnetOrgManager *mgr,
 {
     CcnetDB *db = mgr->priv->db;
 
-    return ccnet_db_statement_query (db, "INSERT INTO OrgUser values (?, ?, ?)",
+    return ccnet_db_statement_query (db, "INSERT INTO OrgUser (org_id, email, is_staff) values (?, ?, ?)",
                                      3, "int", org_id, "string", email,
                                      "int", is_staff);
 }
@@ -518,7 +520,7 @@ ccnet_org_manager_add_org_group (CcnetOrgManager *mgr,
 {
     CcnetDB *db = mgr->priv->db;
 
-    return ccnet_db_statement_query (db, "INSERT INTO OrgGroup VALUES (?, ?)",
+    return ccnet_db_statement_query (db, "INSERT INTO OrgGroup (org_id, group_id) VALUES (?, ?)",
                                      2, "int", org_id, "int", group_id);
 }
 
