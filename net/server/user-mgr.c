@@ -558,7 +558,7 @@ static int check_db_table (CcnetDB *db)
     int db_type = ccnet_db_type (db);
     if (db_type == CCNET_DB_TYPE_MYSQL) {
         sql = "CREATE TABLE IF NOT EXISTS EmailUser ("
-            "id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, "
+            "id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT, "
             "email VARCHAR(255), passwd VARCHAR(256), "
             "is_staff BOOL NOT NULL, is_active BOOL NOT NULL, "
             "ctime BIGINT, reference_id VARCHAR(255),"
@@ -566,21 +566,22 @@ static int check_db_table (CcnetDB *db)
             "ENGINE=INNODB";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
-        sql = "CREATE TABLE IF NOT EXISTS Binding (email VARCHAR(255), peer_id CHAR(41),"
+        sql = "CREATE TABLE IF NOT EXISTS Binding (id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT, "
+            "email VARCHAR(255), peer_id CHAR(41),"
             "UNIQUE INDEX (peer_id), INDEX (email(20)))"
             "ENGINE=INNODB";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
         sql = "CREATE TABLE IF NOT EXISTS UserRole ("
-          "id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT, "
+          "id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT, "
           "email VARCHAR(255), role VARCHAR(255), UNIQUE INDEX (email)) "
           "ENGINE=INNODB";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
         sql = "CREATE TABLE IF NOT EXISTS LDAPUsers ("
-          "id INTEGER PRIMARY KEY AUTO_INCREMENT, "
+          "id BIGINT PRIMARY KEY AUTO_INCREMENT, "
           "email VARCHAR(255) NOT NULL, password varchar(255) NOT NULL, "
           "is_staff BOOL NOT NULL, is_active BOOL NOT NULL, extra_attrs TEXT, "
           "reference_id VARCHAR(255), "
@@ -588,7 +589,8 @@ static int check_db_table (CcnetDB *db)
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
-        sql = "CREATE TABLE IF NOT EXISTS LDAPConfig (cfg_group VARCHAR(255) NOT NULL,"
+        sql = "CREATE TABLE IF NOT EXISTS LDAPConfig ( "
+          "id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT, cfg_group VARCHAR(255) NOT NULL,"
           "cfg_key VARCHAR(255) NOT NULL, value VARCHAR(255), property INTEGER) ENGINE=INNODB";
         if (ccnet_db_query (db, sql) < 0)
             return -1;

@@ -104,7 +104,7 @@ static int check_db_table (CcnetGroupManager *manager, CcnetDB *db)
     int db_type = ccnet_db_type (db);
     if (db_type == CCNET_DB_TYPE_MYSQL) {
         g_string_printf (group_sql,
-            "CREATE TABLE IF NOT EXISTS `%s` (`group_id` INTEGER"
+            "CREATE TABLE IF NOT EXISTS `%s` (`group_id` BIGINT "
             " PRIMARY KEY AUTO_INCREMENT, `group_name` VARCHAR(255),"
             " `creator_name` VARCHAR(255), `timestamp` BIGINT,"
             " `type` VARCHAR(32), `parent_group_id` INTEGER)"
@@ -114,20 +114,23 @@ static int check_db_table (CcnetGroupManager *manager, CcnetDB *db)
             return -1;
         }
 
-        sql = "CREATE TABLE IF NOT EXISTS `GroupUser` (`group_id` INTEGER,"
-            " `user_name` VARCHAR(255), `is_staff` tinyint, PRIMARY KEY"
+        sql = "CREATE TABLE IF NOT EXISTS `GroupUser` ( "
+            "`id` BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT, `group_id` BIGINT,"
+            " `user_name` VARCHAR(255), `is_staff` tinyint, UNIQUE INDEX"
             " (`group_id`, `user_name`), INDEX (`user_name`))"
             "ENGINE=INNODB";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
-        sql = "CREATE TABLE IF NOT EXISTS GroupDNPair (group_id INTEGER,"
+        sql = "CREATE TABLE IF NOT EXISTS GroupDNPair ( "
+            "id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT, group_id INTEGER,"
             " dn VARCHAR(255))ENGINE=INNODB";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
-        sql = "CREATE TABLE IF NOT EXISTS GroupStructure (group_id INTEGER PRIMARY KEY, "
-              "path VARCHAR(1024))ENGINE=INNODB";
+        sql = "CREATE TABLE IF NOT EXISTS GroupStructure ( "
+              "id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT, group_id INTEGER, "
+              "path VARCHAR(1024), UNIQUE INDEX(group_id))ENGINE=INNODB";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
     } else if (db_type == CCNET_DB_TYPE_SQLITE) {
@@ -271,7 +274,7 @@ create_group_common (CcnetGroupManager *mgr,
     if (group_id < 0)
         goto error;
 
-    g_string_printf (sql, "INSERT INTO GroupUser VALUES (?, ?, ?)");
+    g_string_printf (sql, "INSERT INTO GroupUser (group_id, user_name, is_staff) VALUES (?, ?, ?)");
 
     if (ccnet_db_trans_query (trans, sql->str, 3,
                               "int", group_id, "string", user_name_l,
@@ -279,7 +282,7 @@ create_group_common (CcnetGroupManager *mgr,
         goto error;
 
     if (parent_group_id == -1) {
-        g_string_printf (sql, "INSERT INTO GroupStructure VALUES (?,'%d')", group_id);
+        g_string_printf (sql, "INSERT INTO GroupStructure (group_id, path) VALUES (?,'%d')", group_id);
         if (ccnet_db_trans_query (trans, sql->str, 1, "int", group_id) < 0)
             goto error;
     } else if (parent_group_id > 0) {
@@ -289,7 +292,7 @@ create_group_common (CcnetGroupManager *mgr,
                                              &path, 1, "int", parent_group_id);
         if (!path)
             goto error;
-        g_string_printf (sql, "INSERT INTO GroupStructure VALUES (?, '%s, %d')", path, group_id);
+        g_string_printf (sql, "INSERT INTO GroupStructure (group_id, path) VALUES (?, '%s, %d')", path, group_id);
         if (ccnet_db_trans_query (trans, sql->str, 1, "int", group_id) < 0) {
             g_free (path);
             goto error;
@@ -485,7 +488,7 @@ int ccnet_group_manager_add_member (CcnetGroupManager *mgr,
     /* } */
 
     char *member_name_l = g_ascii_strdown (member_name, -1);
-    int rc = ccnet_db_statement_query (db, "INSERT INTO GroupUser VALUES (?, ?, ?)",
+    int rc = ccnet_db_statement_query (db, "INSERT INTO GroupUser (group_id, user_name, is_staff) VALUES (?, ?, ?)",
                                        3, "int", group_id, "string", member_name_l,
                                        "int", 0);
     g_free (member_name_l);
