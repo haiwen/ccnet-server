@@ -274,12 +274,14 @@ create_group_common (CcnetGroupManager *mgr,
     if (group_id < 0)
         goto error;
 
-    g_string_printf (sql, "INSERT INTO GroupUser (group_id, user_name, is_staff) VALUES (?, ?, ?)");
+    if (g_strcmp0(user_name, "system admin") != 0) {
+        g_string_printf (sql, "INSERT INTO GroupUser (group_id, user_name, is_staff) VALUES (?, ?, ?)");
 
-    if (ccnet_db_trans_query (trans, sql->str, 3,
-                              "int", group_id, "string", user_name_l,
-                              "int", 1) < 0)
-        goto error;
+        if (ccnet_db_trans_query (trans, sql->str, 3,
+                                  "int", group_id, "string", user_name_l,
+                                  "int", 1) < 0)
+            goto error;
+    }
 
     if (parent_group_id == -1) {
         g_string_printf (sql, "INSERT INTO GroupStructure (group_id, path) VALUES (?,'%d')", group_id);
