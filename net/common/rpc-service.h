@@ -241,7 +241,7 @@ int
 ccnet_rpc_remove_group_user (const char *user, GError **error);
 
 int
-ccnet_rpc_is_group_user (int group_id, const char *user, GError **error);
+ccnet_rpc_is_group_user (int group_id, const char *user, int in_structure, GError **error);
 
 int
 ccnet_rpc_set_group_creator (int group_id, const char *user_name,

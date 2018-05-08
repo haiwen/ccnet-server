@@ -275,7 +275,7 @@ ccnet_start_rpc(CcnetSession *session)
     searpc_server_register_function ("ccnet-threaded-rpcserver",
                                      ccnet_rpc_is_group_user,
                                      "is_group_user",
-                                     searpc_signature_int__int_string());
+                                     searpc_signature_int__int_string_int());
     searpc_server_register_function ("ccnet-threaded-rpcserver",
                                      ccnet_rpc_set_group_creator,
                                      "set_group_creator",
@@ -1248,7 +1248,7 @@ ccnet_rpc_remove_group_user (const char *user, GError **error)
 }
 
 int
-ccnet_rpc_is_group_user (int group_id, const char *user, GError **error)
+ccnet_rpc_is_group_user (int group_id, const char *user, int in_structure, GError **error)
 {
     CcnetGroupManager *group_mgr = ((CcnetServerSession *)session)->group_mgr;
     if (!user || group_id < 0) {
@@ -1256,7 +1256,7 @@ ccnet_rpc_is_group_user (int group_id, const char *user, GError **error)
         return 0;
     }
 
-    return ccnet_group_manager_is_group_user (group_mgr, group_id, user);
+    return ccnet_group_manager_is_group_user (group_mgr, group_id, user, in_structure ? TRUE : FALSE);
 }
 
 int

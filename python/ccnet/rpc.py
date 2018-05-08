@@ -331,8 +331,8 @@ class CcnetThreadedRpcClient(RpcClientBase):
     def remove_group_user(self, username):
         pass
     
-    @searpc_func("int", ["int", "string"])
-    def is_group_user(self, group_id, user):
+    @searpc_func("int", ["int", "string", "int"])
+    def is_group_user(self, group_id, user, in_structure):
         pass
 
     @searpc_func("int", ["int", "string"])

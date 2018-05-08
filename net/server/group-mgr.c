@@ -958,13 +958,35 @@ ccnet_group_manager_remove_group_user (CcnetGroupManager *mgr,
 int
 ccnet_group_manager_is_group_user (CcnetGroupManager *mgr,
                                    int group_id,
-                                   const char *user)
+                                   const char *user,
+                                   gboolean in_structure)
 {
     CcnetDB *db = mgr->priv->db;
 
-    return ccnet_db_statement_exists (db, "SELECT group_id FROM GroupUser "
-                                      "WHERE group_id=? AND user_name=?",
-                                      2, "int", group_id, "string", user);
+    gboolean exists = ccnet_db_statement_exists (db, "SELECT group_id FROM GroupUser "
+                                                 "WHERE group_id=? AND user_name=?",
+                                                 2, "int", group_id, "string", user);
+    if (!in_structure || exists)
+        return exists ? 1 : 0;
+
+    GList *ptr;
+    GList *groups = ccnet_group_manager_get_groups_by_user (mgr, user, TRUE, NULL);
+    if (!groups)
+        return 0;
+
+    CcnetGroup *group;
+    int id;
+    for (ptr = groups; ptr; ptr = ptr->next) {
+        group = ptr->data;
+        g_object_get (group, "id", &id, NULL);
+        if (group_id == id) {
+            exists = TRUE;
+            break;
+        }
+    }
+    g_list_free_full (groups, g_object_unref);
+
+    return exists ? 1 : 0;
 }
 
 static gboolean
