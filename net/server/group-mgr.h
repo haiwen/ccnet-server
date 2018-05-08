@@ -100,7 +100,8 @@ ccnet_group_manager_remove_group_user (CcnetGroupManager *mgr,
 int
 ccnet_group_manager_is_group_user (CcnetGroupManager *mgr,
                                    int group_id,
-                                   const char *user);
+                                   const char *user,
+                                   gboolean in_structure);
 
 GList*
 ccnet_group_manager_get_all_groups (CcnetGroupManager *mgr,
