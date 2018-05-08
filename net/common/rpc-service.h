@@ -227,11 +227,17 @@ ccnet_rpc_get_top_groups (GError **error);
 GList *
 ccnet_rpc_get_child_groups (int group_id, GError **error);
 
+GList *
+ccnet_rpc_get_descendants_groups(int group_id, GError **error);
+
 GObject *
 ccnet_rpc_get_group (int group_id, GError **error);
 
 GList *
 ccnet_rpc_get_group_members (int group_id, GError **error);
+
+GList *
+ccnet_rpc_get_members_with_prefix(int group_id, const char *prefix, GError **error);
 
 int
 ccnet_rpc_check_group_staff (int group_id, const char *user_name,

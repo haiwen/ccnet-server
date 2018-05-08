@@ -864,6 +864,33 @@ ccnet_group_manager_get_child_groups (CcnetGroupManager *mgr, int group_id,
     return ret;
 }
 
+GList *
+ccnet_group_manager_get_descendants_groups(CcnetGroupManager *mgr, int group_id,
+                                           GError **error)
+{
+    GList *ret = NULL;
+    CcnetDB *db = mgr->priv->db;
+    const char *table_name = mgr->priv->table_name;
+
+    GString *sql = g_string_new("");
+    g_string_printf (sql, "SELECT g.group_id, group_name, creator_name, timestamp, "
+                          "parent_group_id FROM `%s` g, GroupStructure s "
+                          "WHERE g.group_id=s.group_id "
+                          "AND (s.path LIKE '%d, %%' OR s.path LIKE '%%, %d, %%' "
+                          "OR g.group_id=?)",
+                          table_name, group_id, group_id);
+
+    if (ccnet_db_statement_foreach_row (db, sql->str,
+                                        get_user_groups_cb, &ret,
+                                        1, "int", group_id) < 0) {
+        g_string_free (sql, TRUE);
+        return NULL;
+    }
+    g_string_free (sql, TRUE);
+
+    return ret;
+}
+
 CcnetGroup *
 ccnet_group_manager_get_group (CcnetGroupManager *mgr, int group_id,
                                GError **error)
@@ -931,6 +958,47 @@ ccnet_group_manager_get_group_members (CcnetGroupManager *mgr, int group_id,
         return NULL;
 
     return g_list_reverse (group_users);
+}
+
+GList *
+ccnet_group_manager_get_members_with_prefix (CcnetGroupManager *mgr,
+                                             int group_id,
+                                             const char *prefix,
+                                             GError **error)
+{
+    CcnetDB *db = mgr->priv->db;
+    GList *group_users = NULL;
+    GList *ptr;
+    CcnetGroup *group;
+    GString *sql = g_string_new ("");
+    int id;
+
+    g_string_printf(sql, "SELECT group_id, user_name, is_staff FROM GroupUser "
+                         "WHERE group_id IN (");
+    GList *groups = ccnet_group_manager_get_descendants_groups(mgr, group_id, NULL);
+    if (!groups)
+        g_string_append_printf(sql, "%d", group_id);
+
+    for (ptr = groups; ptr; ptr = ptr->next) {
+        group = ptr->data;
+        g_object_get(group, "id", &id, NULL);
+        g_string_append_printf(sql, "%d", id);
+        if (ptr->next)
+            g_string_append_printf(sql, ", ");
+    }
+    g_string_append_printf(sql, ")");
+    if (prefix)
+        g_string_append_printf(sql, " AND user_name LIKE '%s%%'", prefix);
+    g_list_free_full (groups, g_object_unref);
+
+    if (ccnet_db_statement_foreach_row (db, sql->str,
+                                        get_ccnet_groupuser_cb, &group_users, 0) < 0) {
+        g_string_free(sql, TRUE);
+        return NULL;
+    }
+    g_string_free(sql, TRUE);
+
+    return group_users;
 }
 
 int
