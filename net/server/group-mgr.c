@@ -130,7 +130,7 @@ static int check_db_table (CcnetGroupManager *manager, CcnetDB *db)
 
         sql = "CREATE TABLE IF NOT EXISTS GroupStructure ( "
               "id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT, group_id INTEGER, "
-              "path VARCHAR(1024), UNIQUE INDEX(group_id), UNIQUE INDEX(path))ENGINE=INNODB";
+              "path VARCHAR(1024), UNIQUE INDEX(group_id), INDEX(path))ENGINE=INNODB";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
     } else if (db_type == CCNET_DB_TYPE_SQLITE) {
@@ -169,7 +169,7 @@ static int check_db_table (CcnetGroupManager *manager, CcnetDB *db)
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
-        sql = "CREATE UNIQUE INDEX IF NOT EXISTS path_indx on "
+        sql = "CREATE INDEX IF NOT EXISTS path_indx on "
             "`GroupStructure` (`path`)";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
@@ -208,7 +208,7 @@ static int check_db_table (CcnetGroupManager *manager, CcnetDB *db)
             return -1;
 
         if (!pgsql_index_exists (db, "structure_path_idx")) {
-            sql = "CREATE UNIQUE structure_path_idx ON GroupStructure (path)";
+            sql = "CREATE INDEX structure_path_idx ON GroupStructure (path)";
             if (ccnet_db_query (db, sql) < 0)
                 return -1;
         }
