@@ -886,12 +886,21 @@ ccnet_group_manager_get_descendants_groups(CcnetGroupManager *mgr, int group_id,
     const char *table_name = mgr->priv->table_name;
 
     GString *sql = g_string_new("");
-    g_string_printf (sql, "SELECT g.group_id, group_name, creator_name, timestamp, "
-                          "parent_group_id FROM `%s` g, GroupStructure s "
-                          "WHERE g.group_id=s.group_id "
-                          "AND (s.path LIKE '%d, %%' OR s.path LIKE '%%, %d, %%' "
-                          "OR g.group_id=?)",
-                          table_name, group_id, group_id);
+    if (ccnet_db_type(db) == CCNET_DB_TYPE_PGSQL)
+        g_string_printf (sql, "SELECT g.group_id, group_name, creator_name, timestamp, "
+                              "parent_group_id FROM \"%s\" g, GroupStructure s "
+                              "WHERE g.group_id=s.group_id "
+                              "AND (s.path LIKE '%d, %%' OR s.path LIKE '%%, %d, %%' "
+                              "OR g.group_id=?)",
+                              table_name, group_id, group_id);
+
+    else
+        g_string_printf (sql, "SELECT g.group_id, group_name, creator_name, timestamp, "
+                              "parent_group_id FROM `%s` g, GroupStructure s "
+                              "WHERE g.group_id=s.group_id "
+                              "AND (s.path LIKE '%d, %%' OR s.path LIKE '%%, %d, %%' "
+                              "OR g.group_id=?)",
+                              table_name, group_id, group_id);
 
     if (ccnet_db_statement_foreach_row (db, sql->str,
                                         get_user_groups_cb, &ret,
