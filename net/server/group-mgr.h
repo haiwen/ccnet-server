@@ -88,6 +88,12 @@ GList *
 ccnet_group_manager_get_group_members (CcnetGroupManager *mgr, int group_id,
                                        GError **error);
 
+GList *
+ccnet_group_manager_get_members_with_prefix (CcnetGroupManager *mgr,
+                                             int group_id,
+                                             const char *prefix,
+                                             GError **error);
+
 int
 ccnet_group_manager_check_group_staff (CcnetGroupManager *mgr,
                                        int group_id,
@@ -123,6 +129,10 @@ ccnet_group_manager_get_top_groups (CcnetGroupManager *mgr, GError **error);
 GList *
 ccnet_group_manager_get_child_groups (CcnetGroupManager *mgr, int group_id,
                                       GError **error);
+
+GList *
+ccnet_group_manager_get_descendants_groups (CcnetGroupManager *mgr, int group_id,
+                                            GError **error);
 
 GList *
 ccnet_group_manager_get_ancestor_groups (CcnetGroupManager *mgr, int group_id);

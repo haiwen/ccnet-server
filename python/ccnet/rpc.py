@@ -315,12 +315,20 @@ class CcnetThreadedRpcClient(RpcClientBase):
     def get_child_groups(self, group_id):
         pass
 
+    @searpc_func("objlist", ["int"])
+    def get_descendants_groups(self, group_id):
+        pass
+
     @searpc_func("object", ["int"])
     def get_group(self, group_id):
         pass
 
     @searpc_func("objlist", ["int"])
     def get_group_members(self, group_id):
+        pass
+
+    @searpc_func("objlist", ["int", "string"])
+    def get_members_with_prefix(self, group_id, prefix):
         pass
 
     @searpc_func("int", ["int", "string"])

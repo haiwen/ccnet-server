@@ -265,6 +265,10 @@ ccnet_start_rpc(CcnetSession *session)
                                      "get_group_members",
                                      searpc_signature_objlist__int());
     searpc_server_register_function ("ccnet-threaded-rpcserver",
+                                     ccnet_rpc_get_members_with_prefix,
+                                     "get_members_with_prefix",
+                                     searpc_signature_objlist__int_string());
+    searpc_server_register_function ("ccnet-threaded-rpcserver",
                                      ccnet_rpc_check_group_staff,
                                      "check_group_staff",
                                      searpc_signature_int__int_string());
@@ -291,6 +295,10 @@ ccnet_start_rpc(CcnetSession *session)
     searpc_server_register_function ("ccnet-threaded-rpcserver",
                                      ccnet_rpc_get_child_groups,
                                      "get_child_groups",
+                                     searpc_signature_objlist__int());
+    searpc_server_register_function ("ccnet-threaded-rpcserver",
+                                     ccnet_rpc_get_descendants_groups,
+                                     "get_descendants_groups",
                                      searpc_signature_objlist__int());
 
     searpc_server_register_function ("ccnet-threaded-rpcserver",
@@ -848,6 +856,18 @@ ccnet_rpc_get_child_groups (int group_id, GError **error)
 }
 
 GList*
+ccnet_rpc_get_descendants_groups(int group_id, GError **error)
+{
+    CcnetGroupManager *group_mgr =
+        ((CcnetServerSession *)session)->group_mgr;
+    GList *groups = NULL;
+
+    groups = ccnet_group_manager_get_descendants_groups (group_mgr, group_id, error);
+
+    return groups;
+}
+
+GList*
 ccnet_rpc_search_ldapusers (const char *keyword,
                             int start, int limit,
                             GError **error)
@@ -1216,6 +1236,18 @@ ccnet_rpc_get_group_members (int group_id, GError **error)
         return NULL;
 
     return g_list_reverse (ret);
+}
+
+GList *
+ccnet_rpc_get_members_with_prefix(int group_id, const char *prefix, GError **error)
+{
+    CcnetGroupManager *group_mgr =
+        ((CcnetServerSession *)session)->group_mgr;
+    GList *ret = NULL;
+
+    ret = ccnet_group_manager_get_members_with_prefix (group_mgr, group_id, prefix, error);
+
+    return ret;
 }
 
 int
