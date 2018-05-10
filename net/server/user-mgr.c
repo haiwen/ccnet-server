@@ -1399,7 +1399,8 @@ ccnet_user_manager_get_emailusers (CcnetUserManager *manager,
                                "t1.is_staff, t1.is_active, t1.ctime, "
                                "t2.role, t1.passwd FROM EmailUser t1 "
                                "LEFT JOIN UserRole t2 "
-                               "ON t1.email = t2.email %s",
+                               "ON t1.email = t2.email %s "
+                               "WHERE t1.email NOT LIKE '%%@seafile_group'",
                                status_condition);
 
         rc = ccnet_db_statement_foreach_row (db,
@@ -1418,6 +1419,7 @@ ccnet_user_manager_get_emailusers (CcnetUserManager *manager,
                                "t2.role, t1.passwd FROM EmailUser t1 "
                                "LEFT JOIN UserRole t2 "
                                "ON t1.email = t2.email %s "
+                               "WHERE t1.email NOT LIKE '%%@seafile_group' "
                                "ORDER BY t1.id LIMIT ? OFFSET ?",
                                status_condition);
 
@@ -1500,6 +1502,7 @@ ccnet_user_manager_search_emailusers (CcnetUserManager *manager,
                                              "LEFT JOIN UserRole t2 "
                                              "ON t1.email = t2.email "
                                              "WHERE t1.Email LIKE ? "
+                                             "AND t1.email NOT LIKE '%%@seafile_group' "
                                              "ORDER BY t1.id",
                                              get_emailusers_cb, &ret,
                                              1, "string", db_patt);
@@ -1511,6 +1514,7 @@ ccnet_user_manager_search_emailusers (CcnetUserManager *manager,
                                              "LEFT JOIN UserRole t2 "
                                              "ON t1.email = t2.email "
                                              "WHERE t1.Email LIKE ? "
+                                             "AND t1.email NOT LIKE '%%@seafile_group' "
                                              "ORDER BY t1.id LIMIT ? OFFSET ?",
                                              get_emailusers_cb, &ret,
                                              3, "string", db_patt,
@@ -1744,7 +1748,7 @@ ccnet_user_manager_get_superusers(CcnetUserManager *manager)
               "t2.role, t1.passwd FROM EmailUser t1 "
               "LEFT JOIN UserRole t2 "
               "ON t1.email = t2.email "
-              "WHERE is_staff = 1;");
+              "WHERE is_staff = 1 AND t1.email NOT LIKE '%%@seafile_group';");
 
     if (ccnet_db_foreach_selected_row (db, sql, get_emailusers_cb, &ret) < 0) {
         while (ret != NULL) {
