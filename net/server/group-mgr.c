@@ -404,10 +404,28 @@ int ccnet_group_manager_create_org_group (CcnetGroupManager *mgr,
 static gboolean
 check_group_staff (CcnetDB *db, int group_id, const char *user_name)
 {
-    return ccnet_db_statement_exists (db, "SELECT group_id FROM GroupUser WHERE "
-                                      "group_id = ? AND user_name = ? AND "
-                                      "is_staff = 1",
-                                      2, "int", group_id, "string", user_name);
+    gboolean exists;
+    GString *sql = g_string_new("");
+    g_string_printf (sql, "SELECT path FROM GroupStructure WHERE group_id=?");
+    char *path = ccnet_db_statement_get_string (db, sql->str, 1, "int", group_id);
+
+
+    if (!path) {
+        exists = ccnet_db_statement_exists (db, "SELECT group_id FROM GroupUser WHERE "
+                                            "group_id = ? AND user_name = ? AND "
+                                            "is_staff = 1",
+                                            2, "int", group_id, "string", user_name);
+    } else {
+        g_string_printf (sql, "SELECT group_id FROM GroupUser WHERE "
+                              "group_id IN (%s) AND user_name = ? AND "
+                              "is_staff = 1", path);
+        exists = ccnet_db_statement_exists (db, sql->str,
+                                            1, "string", user_name);
+    }
+    g_string_free (sql, TRUE);
+    g_free (path);
+
+    return exists;
 }
 
 int ccnet_group_manager_remove_group (CcnetGroupManager *mgr,
