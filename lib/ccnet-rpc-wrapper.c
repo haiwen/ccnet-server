@@ -181,14 +181,14 @@ ccnet_get_binding_email (SearpcClient *client, const char *peer_id)
 }
 
 GList *
-ccnet_get_groups_by_user (SearpcClient *client, const char *user)
+ccnet_get_groups_by_user (SearpcClient *client, const char *user, int return_ancestors)
 {
     if (!user)
         return NULL;
 
     return searpc_client_call__objlist (
         client, "get_groups", CCNET_TYPE_GROUP, NULL,
-        1, "string", user);
+        2, "string", user, "int", return_ancestors);
 }
 
 GList *
