@@ -130,7 +130,7 @@ static int check_db_table (CcnetGroupManager *manager, CcnetDB *db)
 
         sql = "CREATE TABLE IF NOT EXISTS GroupStructure ( "
               "id BIGINT NOT NULL PRIMARY KEY AUTO_INCREMENT, group_id INTEGER, "
-              "path VARCHAR(1024), UNIQUE INDEX(group_id), INDEX(path))ENGINE=INNODB";
+              "path VARCHAR(1024), UNIQUE INDEX(group_id))ENGINE=INNODB";
         if (ccnet_db_query (db, sql) < 0)
             return -1;
     } else if (db_type == CCNET_DB_TYPE_SQLITE) {
