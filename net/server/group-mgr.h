@@ -97,7 +97,8 @@ ccnet_group_manager_get_members_with_prefix (CcnetGroupManager *mgr,
 int
 ccnet_group_manager_check_group_staff (CcnetGroupManager *mgr,
                                        int group_id,
-                                       const char *user_name);
+                                       const char *user_name,
+                                       int in_structure);
 
 int
 ccnet_group_manager_remove_group_user (CcnetGroupManager *mgr,
