@@ -306,7 +306,7 @@ static void send_challenge(CcnetProcessor *processor)
     unsigned char *buf;
     int len;
 
-    RAND_pseudo_bytes (priv->random_buf, 40);
+    RAND_bytes (priv->random_buf, 40);
     buf = public_key_encrypt (peer->pubkey, priv->random_buf, 40, &len);
     if (len < 0) {
         ccnet_debug ("[Keepalive] Failed to encrypt challenge "

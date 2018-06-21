@@ -4,6 +4,7 @@
 #include <openssl/rand.h>
 #include <openssl/rsa.h>
 #include <openssl/err.h>
+#include <openssl/bn.h>
 
 #include <string.h>
 #include <glib.h>
@@ -207,9 +208,17 @@ RSA *
 generate_private_key(u_int bits)
 {
 	RSA *private = NULL;
+	BIGNUM *e = NULL;
 
-	private = RSA_generate_key(bits, 35, NULL, NULL);
-	if (private == NULL)
+	private = RSA_new();
+	e = BN_new();
+	if (private == NULL || e == NULL || !BN_set_word(e, 35) ||
+	    !RSA_generate_key_ex(private, bits, e, NULL)) {
+		BN_free(e);
+		RSA_free(private);
 		g_error ("rsa_generate_private_key: key generation failed.");
+		return NULL;
+	}
+	BN_free(e);
 	return private;
 }

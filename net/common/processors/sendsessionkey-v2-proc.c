@@ -125,7 +125,7 @@ generate_session_key (CcnetProcessor *processor, int *len_p)
     unsigned char random_buf[40];
     SHA_CTX s;
 
-    RAND_pseudo_bytes (random_buf, sizeof(random_buf));
+    RAND_bytes (random_buf, sizeof(random_buf));
     
     SHA1_Init (&s);
     SHA1_Update (&s, random_buf, sizeof(random_buf));

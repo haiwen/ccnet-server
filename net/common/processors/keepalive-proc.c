@@ -401,7 +401,7 @@ static void send_challenge(CcnetProcessor *processor)
     unsigned char *buf;
     int len;
 
-    RAND_pseudo_bytes (priv->random_buf, 40);
+    RAND_bytes (priv->random_buf, 40);
     buf = public_key_encrypt (peer->pubkey, priv->random_buf, 40, &len);
     ccnet_processor_send_update (processor, "311", NULL, (char *)buf, len);
 
@@ -434,7 +434,7 @@ static void send_challenge_user(CcnetProcessor *processor, CcnetUser *user)
 
     ccnet_debug ("[Keepalive] Send user challenge to %.8s\n",
                  processor->peer->id);
-    RAND_pseudo_bytes (priv->random_buf, 40);
+    RAND_bytes (priv->random_buf, 40);
     buf = public_key_encrypt (user->pubkey, priv->random_buf, 40, &len);
     ccnet_processor_send_update (processor, "321", NULL, (char *)buf, len);
 
