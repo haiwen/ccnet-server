@@ -331,8 +331,8 @@ class CcnetThreadedRpcClient(RpcClientBase):
     def get_members_with_prefix(self, group_id, prefix):
         pass
 
-    @searpc_func("int", ["int", "string"])
-    def check_group_staff(self, group_id, username):
+    @searpc_func("int", ["int", "string", "int"])
+    def check_group_staff(self, group_id, username, in_structure):
         pass
 
     @searpc_func("int", ["string"])

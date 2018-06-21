@@ -240,7 +240,7 @@ GList *
 ccnet_rpc_get_members_with_prefix(int group_id, const char *prefix, GError **error);
 
 int
-ccnet_rpc_check_group_staff (int group_id, const char *user_name,
+ccnet_rpc_check_group_staff (int group_id, const char *user_name, int in_structure,
                              GError **error);
 
 int

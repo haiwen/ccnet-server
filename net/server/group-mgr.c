@@ -402,8 +402,15 @@ int ccnet_group_manager_create_org_group (CcnetGroupManager *mgr,
 }
 
 static gboolean
-check_group_staff (CcnetDB *db, int group_id, const char *user_name)
+check_group_staff (CcnetDB *db, int group_id, const char *user_name, gboolean in_structure)
 {
+    if (!in_structure) {
+        return ccnet_db_statement_exists (db, "SELECT group_id FROM GroupUser WHERE "
+                                              "group_id = ? AND user_name = ? AND "
+                                              "is_staff = 1",
+                                              2, "int", group_id, "string", user_name);
+    }
+
     gboolean exists;
     GString *sql = g_string_new("");
     g_string_printf (sql, "SELECT path FROM GroupStructure WHERE group_id=?");
@@ -499,7 +506,7 @@ int ccnet_group_manager_add_member (CcnetGroupManager *mgr,
     CcnetDB *db = mgr->priv->db;
 
     /* check whether user is the staff of the group */
-    if (!check_group_staff (db, group_id, user_name)) {
+    if (!check_group_staff (db, group_id, user_name, TRUE)) {
         g_set_error (error, CCNET_DOMAIN, 0,
                      "Permission error: only group staff can add member");
         return -1; 
@@ -543,7 +550,7 @@ int ccnet_group_manager_remove_member (CcnetGroupManager *mgr,
     char *sql;
 
     /* check whether user is the staff of the group */
-    if (!check_group_staff (db, group_id, user_name)) {
+    if (!check_group_staff (db, group_id, user_name, TRUE)) {
         g_set_error (error, CCNET_DOMAIN, 0,
                      "Only group staff can remove member");
         return -1; 
@@ -628,7 +635,7 @@ int ccnet_group_manager_quit_group (CcnetGroupManager *mgr,
     CcnetDB *db = mgr->priv->db;
     
     /* check where user is the staff of the group */
-    if (check_group_staff (db, group_id, user_name)) {
+    if (check_group_staff (db, group_id, user_name, FALSE)) {
         g_set_error (error, CCNET_DOMAIN, 0,
                      "Group staff can not quit group");
         return -1; 
@@ -1044,9 +1051,10 @@ ccnet_group_manager_get_members_with_prefix (CcnetGroupManager *mgr,
 int
 ccnet_group_manager_check_group_staff (CcnetGroupManager *mgr,
                                        int group_id,
-                                       const char *user_name)
+                                       const char *user_name,
+                                       gboolean in_structure)
 {
-    return check_group_staff (mgr->priv->db, group_id, user_name);
+    return check_group_staff (mgr->priv->db, group_id, user_name, in_structure);
 }
 
 int
