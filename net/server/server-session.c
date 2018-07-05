@@ -131,6 +131,7 @@ static int init_mysql_database (CcnetSession *session)
     char *host, *user, *passwd, *db, *unix_socket, *charset;
     int port;
     gboolean use_ssl = FALSE;
+    gboolean create_tables = TRUE;
     int max_connections = 0;
 
     host = ccnet_key_file_get_string (session->keyf, "Database", "HOST");
@@ -165,6 +166,11 @@ static int init_mysql_database (CcnetSession *session)
     unix_socket = ccnet_key_file_get_string (session->keyf,
                                              "Database", "UNIX_SOCKET");
     use_ssl = g_key_file_get_boolean (session->keyf, "Database", "USE_SSL", NULL);
+
+    if (g_key_file_has_key (session->keyf, "Database", "CREATE_TABLES", NULL))
+        create_tables = g_key_file_get_boolean (session->keyf, "Database", "CREATE_TABLES", NULL);
+    session->create_tables = create_tables;
+
     charset = ccnet_key_file_get_string (session->keyf,
                                          "Database", "CONNECTION_CHARSET");
 

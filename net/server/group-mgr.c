@@ -90,7 +90,12 @@ open_db (CcnetGroupManager *manager)
         return -1;
     
     manager->priv->db = db;
-    return check_db_table (manager, db);
+    if (manager->session->create_tables && check_db_table (manager, db) < 0) {
+        ccnet_warning ("Failed to create group db tables.\n");
+        return -1;
+    }
+
+    return 0;
 }
 
 /* -------- Group Database Management ---------------- */

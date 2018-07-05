@@ -75,7 +75,12 @@ open_db (CcnetOrgManager *manager)
         return -1;
     
     manager->priv->db = db;
-    return check_db_table (db);
+    if (manager->session->create_tables && check_db_table (db) < 0) {
+        ccnet_warning ("Failed to create org db tables.\n");
+        return -1;
+    }
+
+    return 0;
 }
 
 void ccnet_org_manager_start (CcnetOrgManager *manager)

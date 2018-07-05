@@ -95,6 +95,8 @@ struct CcnetSession
     sqlite3                    *config_db;
 
     CcnetDB                    *db;
+
+    gboolean                   create_tables;
 };
 
 struct _CcnetSessionClass
