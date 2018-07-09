@@ -764,7 +764,8 @@ open_db (CcnetUserManager *manager)
         return -1;
 
     manager->priv->db = db;
-    if (manager->session->create_tables && check_db_table (db) < 0) {
+    if ((manager->session->create_tables || ccnet_db_type(db) != CCNET_DB_TYPE_MYSQL)
+        && check_db_table (db) < 0) {
         ccnet_warning ("Failed to create user db tables.\n");
         return -1;
     }
