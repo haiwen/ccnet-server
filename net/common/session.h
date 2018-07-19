@@ -13,6 +13,8 @@
 
 #include <glib.h>
 #include <glib/gstdio.h>
+#include <jansson.h>
+
 #include "ccnet-session-base.h"
 
 #include "processor.h"

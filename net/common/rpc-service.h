@@ -347,4 +347,7 @@ ccnet_rpc_login_relay (const char *relay_id, const char *email,
 int
 ccnet_rpc_logout_relay (const char *relay_id, GError **error);
 
+GList *
+ccnet_rpc_get_groups_members (const char *group_ids, GError **error);
+
 #endif /* RPC_SERVICE_H */

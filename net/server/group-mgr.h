@@ -138,5 +138,8 @@ ccnet_group_manager_get_descendants_groups (CcnetGroupManager *mgr, int group_id
 GList *
 ccnet_group_manager_get_ancestor_groups (CcnetGroupManager *mgr, int group_id);
 
+GList *
+ccnet_group_manager_get_groups_members (CcnetGroupManager *mgr, const char *group_ids,
+                                        GError **error);
 #endif /* GROUP_MGR_H */
 
