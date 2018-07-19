@@ -1312,3 +1312,64 @@ ccnet_group_manager_search_groups (CcnetGroupManager *mgr,
 
     return g_list_reverse (ret);
 }
+
+static gboolean
+get_groups_members_cb (CcnetDBRow *row, void *data)
+{
+    GList **users = data;
+    const char *user = ccnet_db_row_get_column_text (row, 0);
+
+    char *user_l = g_ascii_strdown (user, -1);
+    CcnetGroupUser *group_user = g_object_new (CCNET_TYPE_GROUP_USER,
+                                               "user_name", user_l,
+                                               NULL);
+    g_free (user_l);
+    *users = g_list_append(*users, group_user);
+
+    return TRUE;
+}
+
+/* group_ids is json format: "[id1, id2, id3, ...]" */
+GList *
+ccnet_group_manager_get_groups_members (CcnetGroupManager *mgr, const char *group_ids,
+                                        GError **error)
+{
+    CcnetDB *db = mgr->priv->db;
+    GList *ret = NULL;
+    GString *sql = g_string_new ("");
+    int i, group_id;
+    json_t *j_array = NULL, *j_obj;
+    json_error_t j_error;
+
+    g_string_printf (sql, "SELECT DISTINCT user_name FROM GroupUser WHERE group_id IN (");
+    j_array = json_loadb (group_ids, strlen(group_ids), 0, &j_error);
+    if (!j_array) {
+        g_set_error (error, CCNET_DOMAIN, 0, "Bad args.");
+        g_string_free (sql, TRUE);
+        return NULL;
+    }
+    size_t id_num = json_array_size (j_array);
+
+    for (i = 0; i < id_num; i++) {
+        j_obj = json_array_get (j_array, i);
+        group_id = json_integer_value (j_obj);
+        if (group_id <= 0) {
+            g_set_error (error, CCNET_DOMAIN, 0, "Bad args.");
+            g_string_free (sql, TRUE);
+            json_decref (j_array);
+            return NULL;
+        }
+        g_string_append_printf (sql, "%d", group_id);
+        if (i + 1 < id_num)
+            g_string_append_printf (sql, ",");
+    }
+    g_string_append_printf (sql, ")");
+    json_decref (j_array);
+
+    if (ccnet_db_statement_foreach_row (db, sql->str, get_groups_members_cb, &ret, 0) < 0)
+        ccnet_warning("Failed to get groups members for group [%s].\n", group_ids);
+
+    g_string_free (sql, TRUE);
+
+    return ret;
+}

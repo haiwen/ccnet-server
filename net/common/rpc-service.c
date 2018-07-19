@@ -300,6 +300,10 @@ ccnet_start_rpc(CcnetSession *session)
                                      ccnet_rpc_get_descendants_groups,
                                      "get_descendants_groups",
                                      searpc_signature_objlist__int());
+    searpc_server_register_function ("ccnet-threaded-rpcserver",
+                                     ccnet_rpc_get_groups_members,
+                                     "get_groups_members",
+                                     searpc_signature_objlist__string());
 
     searpc_server_register_function ("ccnet-threaded-rpcserver",
                                      ccnet_rpc_create_org,
@@ -1672,6 +1676,18 @@ ccnet_rpc_get_primary_id (const char *email, GError **error)
     CcnetUserManager *user_mgr = ((CcnetServerSession *)session)->user_mgr;
 
     return ccnet_user_manager_get_primary_id (user_mgr, email);
+}
+
+GList *
+ccnet_rpc_get_groups_members (const char *group_ids, GError **error)
+{
+    if (!group_ids || g_strcmp0(group_ids, "") == 0) {
+        g_set_error (error, CCNET_DOMAIN, CCNET_ERR_INTERNAL, "Bad arguments");
+        return NULL;
+    }
+    CcnetGroupManager *group_mgr = ((CcnetServerSession *)session)->group_mgr;
+
+    return ccnet_group_manager_get_groups_members (group_mgr, group_ids, error);
 }
 
 #endif  /* CCNET_SERVER */
