@@ -821,11 +821,13 @@ ccnet_group_manager_get_groups_by_user (CcnetGroupManager *mgr,
                                             get_group_paths_cb,
                                             paths, 0) < 0) {
             g_list_free_full (ret, g_object_unref);
+            ret = NULL;
             goto out;
         }
         if (g_strcmp0(paths->str, "") == 0) {
             ccnet_warning ("Failed to get groups path for user %s\n", user_name);
             g_list_free_full (ret, g_object_unref);
+            ret = NULL;
             goto out;
         }
 
@@ -837,6 +839,7 @@ ccnet_group_manager_get_groups_by_user (CcnetGroupManager *mgr,
                                         get_user_groups_cb,
                                         &ret, 0) < 0) {
             g_list_free_full (ret, g_object_unref);
+            ret = NULL;
             goto out;
         }
     }
