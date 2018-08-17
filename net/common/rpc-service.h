@@ -222,7 +222,7 @@ GList *
 ccnet_rpc_get_ancestor_groups (int group_id, GError **error);
 
 GList *
-ccnet_rpc_get_top_groups (GError **error);
+ccnet_rpc_get_top_groups (int including_org, GError **error);
 
 GList *
 ccnet_rpc_get_child_groups (int group_id, GError **error);
