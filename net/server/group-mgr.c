@@ -1148,6 +1148,7 @@ get_all_ccnetgroups_cb (CcnetDBRow *row, void *data)
 
 GList *
 ccnet_group_manager_get_top_groups (CcnetGroupManager *mgr,
+                                    gboolean including_org,
                                     GError **error)
 {
     CcnetDB *db = mgr->priv->db;
@@ -1156,14 +1157,27 @@ ccnet_group_manager_get_top_groups (CcnetGroupManager *mgr,
     const char *table_name = mgr->priv->table_name;
     int rc;
 
-    if (ccnet_db_type(mgr->priv->db) == CCNET_DB_TYPE_PGSQL)
-        g_string_printf (sql, "SELECT group_id, group_name, "
-                              "creator_name, timestamp, parent_group_id FROM \"%s\" "
-                              "WHERE parent_group_id=-1 ORDER BY timestamp DESC", table_name);
-    else
-        g_string_printf (sql, "SELECT group_id, group_name, "
-                              "creator_name, timestamp, parent_group_id FROM `%s` "
-                              "WHERE parent_group_id=-1 ORDER BY timestamp DESC", table_name);
+    if (ccnet_db_type(mgr->priv->db) == CCNET_DB_TYPE_PGSQL) {
+        if (including_org)
+            g_string_printf (sql, "SELECT group_id, group_name, "
+                                  "creator_name, timestamp, parent_group_id FROM \"%s\" "
+                                  "WHERE parent_group_id=-1 ORDER BY timestamp DESC", table_name);
+        else
+            g_string_printf (sql, "SELECT group_id, group_name, "
+                                  "creator_name, timestamp, parent_group_id FROM \"%s\" "
+                                  "WHERE parent_group_id=-1 AND group_id NOT IN "
+                                  "(SELECT group_id FROM OrgGroup) ORDER BY timestamp DESC", table_name);
+    } else {
+        if (including_org)
+            g_string_printf (sql, "SELECT group_id, group_name, "
+                                  "creator_name, timestamp, parent_group_id FROM `%s` "
+                                  "WHERE parent_group_id=-1 ORDER BY timestamp DESC", table_name);
+        else
+            g_string_printf (sql, "SELECT group_id, group_name, "
+                                  "creator_name, timestamp, parent_group_id FROM `%s` "
+                                  "WHERE parent_group_id=-1 AND group_id NOT IN "
+                                  "(SELECT group_id FROM OrgGroup) ORDER BY timestamp DESC", table_name);
+    }
     rc = ccnet_db_statement_foreach_row (db, sql->str,
                                          get_all_ccnetgroups_cb, &ret, 0);
     g_string_free (sql, TRUE);

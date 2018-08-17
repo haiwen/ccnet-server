@@ -291,7 +291,7 @@ ccnet_start_rpc(CcnetSession *session)
     searpc_server_register_function ("ccnet-threaded-rpcserver",
                                      ccnet_rpc_get_top_groups,
                                      "get_top_groups",
-                                     searpc_signature_objlist__void());
+                                     searpc_signature_objlist__int());
     searpc_server_register_function ("ccnet-threaded-rpcserver",
                                      ccnet_rpc_get_child_groups,
                                      "get_child_groups",
@@ -836,13 +836,13 @@ ccnet_rpc_search_groups (const char *group_patt,
 }
 
 GList*
-ccnet_rpc_get_top_groups (GError **error)
+ccnet_rpc_get_top_groups (int including_org, GError **error)
 {
     CcnetGroupManager *group_mgr =
         ((CcnetServerSession *)session)->group_mgr;
     GList *groups = NULL;
 
-    groups = ccnet_group_manager_get_top_groups (group_mgr, error);
+    groups = ccnet_group_manager_get_top_groups (group_mgr, including_org ? TRUE : FALSE, error);
 
     return groups;
 }

@@ -125,7 +125,7 @@ ccnet_group_manager_search_groups (CcnetGroupManager *mgr,
                                    int start, int limit);
 
 GList *
-ccnet_group_manager_get_top_groups (CcnetGroupManager *mgr, GError **error);
+ccnet_group_manager_get_top_groups (CcnetGroupManager *mgr, gboolean including_org, GError **error);
 
 GList *
 ccnet_group_manager_get_child_groups (CcnetGroupManager *mgr, int group_id,
