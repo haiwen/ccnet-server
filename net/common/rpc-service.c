@@ -755,7 +755,12 @@ ccnet_rpc_validate_emailuser (const char *email, const char *passwd, GError **er
 GObject*
 ccnet_rpc_get_emailuser (const char *email, GError **error)
 {
-   CcnetUserManager *user_mgr = 
+    if (!email) {
+        g_set_error (error, CCNET_DOMAIN, CCNET_ERR_INTERNAL, "Email can not be NULL");
+        return NULL;
+    }
+
+    CcnetUserManager *user_mgr =
         ((CcnetServerSession *)session)->user_mgr;
     CcnetEmailUser *emailuser = NULL;
     
@@ -767,12 +772,17 @@ ccnet_rpc_get_emailuser (const char *email, GError **error)
 GObject*
 ccnet_rpc_get_emailuser_with_import (const char *email, GError **error)
 {
-   CcnetUserManager *user_mgr = ((CcnetServerSession *)session)->user_mgr;
-   CcnetEmailUser *emailuser = NULL;
+    if (!email) {
+        g_set_error (error, CCNET_DOMAIN, CCNET_ERR_INTERNAL, "Email can not be NULL");
+        return NULL;
+    }
 
-   emailuser = ccnet_user_manager_get_emailuser_with_import (user_mgr, email);
+    CcnetUserManager *user_mgr = ((CcnetServerSession *)session)->user_mgr;
+    CcnetEmailUser *emailuser = NULL;
 
-   return (GObject *)emailuser;
+    emailuser = ccnet_user_manager_get_emailuser_with_import (user_mgr, email);
+
+    return (GObject *)emailuser;
 }
 
 GObject*
