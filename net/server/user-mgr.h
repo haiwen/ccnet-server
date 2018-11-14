@@ -168,4 +168,9 @@ ccnet_user_manager_get_primary_id (CcnetUserManager *manager,
 char *
 ccnet_user_manager_get_login_id (CcnetUserManager *manager,
                                  const char *primary_id);
+
+GList *
+ccnet_user_manager_get_emailusers_in_list (CcnetUserManager *manager,
+                                           const char *user_list,
+                                           GError **error);
 #endif

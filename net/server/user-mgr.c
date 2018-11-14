@@ -1901,3 +1901,59 @@ ccnet_user_manager_get_login_id (CcnetUserManager *manager, const char *primary_
 #endif
     return g_strdup (primary_id);
 }
+
+GList *
+ccnet_user_manager_get_emailusers_in_list (CcnetUserManager *manager,
+                                           const char *user_list,
+                                           GError **error)
+{
+    int i;
+    const char *username;
+    json_t *j_array = NULL, *j_obj;
+    json_error_t j_error;
+    GList *ret = NULL;
+    const char *args[20];
+
+    j_array = json_loadb (user_list, strlen(user_list), 0, &j_error);
+    if (!j_array) {
+        g_set_error (error, CCNET_DOMAIN, 0, "Bad args.");
+        return NULL;
+    }
+    /* Query 20 users at most. */
+    size_t user_num = json_array_size (j_array);
+    if (user_num > 20) {
+        g_set_error (error, CCNET_DOMAIN, 0, "Number of users exceeds 20.");
+        json_decref (j_array);
+        return NULL;
+    }
+    GString *sql = g_string_new ("");
+    g_string_printf (sql, "SELECT e.id, e.email, is_staff, is_active, ctime, "
+                          "role, passwd FROM EmailUser e "
+                          "LEFT JOIN UserRole r ON e.email = r.email "
+                          "WHERE e.email IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+
+    for (i = 0; i < 20; i++) {
+        if (i < user_num) {
+            j_obj = json_array_get (j_array, i);
+            username = json_string_value(j_obj);
+            args[i] = username;
+        } else {
+            args[i] = "";
+        }
+    }
+    json_decref (j_array);
+
+    if (ccnet_db_statement_foreach_row (manager->priv->db, sql->str, get_emailusers_cb, &ret, 20,
+                                        "string", args[0], "string", args[1], "string", args[2],
+                                        "string", args[3], "string", args[4], "string", args[5],
+                                        "string", args[6], "string", args[7], "string", args[8],
+                                        "string", args[9], "string", args[10], "string", args[11],
+                                        "string", args[12], "string", args[13], "string", args[14],
+                                        "string", args[15], "string", args[16], "string", args[17],
+                                        "string", args[18], "string", args[19]) < 0)
+        ccnet_warning("Failed to get users in list %s.\n", user_list);
+
+    g_string_free (sql, TRUE);
+
+    return ret;
+}
