@@ -195,6 +195,10 @@ ccnet_start_rpc(CcnetSession *session)
                                      ccnet_rpc_get_superusers,
                                      "get_superusers",
                                      searpc_signature_objlist__void());
+    searpc_server_register_function ("ccnet-threaded-rpcserver",
+                                     ccnet_rpc_get_emailusers_in_list,
+                                     "get_emailusers_in_list",
+                                     searpc_signature_objlist__string());
 
     /* RSA sign a message with my private key. */
     searpc_server_register_function ("ccnet-rpcserver",
@@ -1698,6 +1702,18 @@ ccnet_rpc_get_groups_members (const char *group_ids, GError **error)
     CcnetGroupManager *group_mgr = ((CcnetServerSession *)session)->group_mgr;
 
     return ccnet_group_manager_get_groups_members (group_mgr, group_ids, error);
+}
+
+GList *
+ccnet_rpc_get_emailusers_in_list(const char *user_list, GError **error)
+{
+    if (!user_list) {
+        g_set_error (error, CCNET_DOMAIN, CCNET_ERR_INTERNAL, "Bad arguments");
+        return NULL;
+    }
+    CcnetUserManager *user_mgr = ((CcnetServerSession *)session)->user_mgr;
+
+    return ccnet_user_manager_get_emailusers_in_list (user_mgr, user_list, error);
 }
 
 #endif  /* CCNET_SERVER */
