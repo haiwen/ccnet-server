@@ -1941,8 +1941,6 @@ ccnet_user_manager_get_emailusers_in_list (CcnetUserManager *manager,
             args[i] = "";
         }
     }
-    json_decref (j_array);
-
     if (ccnet_db_statement_foreach_row (manager->priv->db, sql->str, get_emailusers_cb, &ret, 20,
                                         "string", args[0], "string", args[1], "string", args[2],
                                         "string", args[3], "string", args[4], "string", args[5],
@@ -1953,6 +1951,7 @@ ccnet_user_manager_get_emailusers_in_list (CcnetUserManager *manager,
                                         "string", args[18], "string", args[19]) < 0)
         ccnet_warning("Failed to get users in list %s.\n", user_list);
 
+    json_decref (j_array);
     g_string_free (sql, TRUE);
 
     return ret;
