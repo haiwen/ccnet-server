@@ -329,7 +329,7 @@ char *
 ccnet_rpc_get_primary_id (const char *email, GError **error);
 
 GList *
-ccnet_rpc_get_emailusers_in_list(const char *user_list, GError **error);
+ccnet_rpc_get_emailusers_in_list(const char *source, const char *user_list, GError **error);
 
 #endif /* CCNET_SERVER */
 

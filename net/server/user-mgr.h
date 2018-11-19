@@ -171,6 +171,7 @@ ccnet_user_manager_get_login_id (CcnetUserManager *manager,
 
 GList *
 ccnet_user_manager_get_emailusers_in_list (CcnetUserManager *manager,
+                                           const char *source,
                                            const char *user_list,
                                            GError **error);
 #endif
