@@ -451,6 +451,6 @@ class CcnetThreadedRpcClient(RpcClientBase):
     def get_groups_members(self, group_ids):
         pass
 
-    @searpc_func("objlist", ["string"])
-    def get_emailusers_in_list(self, user_list):
+    @searpc_func("objlist", ["string", "string"])
+    def get_emailusers_in_list(self, source, user_list):
         pass

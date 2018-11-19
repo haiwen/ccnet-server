@@ -1904,6 +1904,7 @@ ccnet_user_manager_get_login_id (CcnetUserManager *manager, const char *primary_
 
 GList *
 ccnet_user_manager_get_emailusers_in_list (CcnetUserManager *manager,
+                                           const char *source,
                                            const char *user_list,
                                            GError **error)
 {
@@ -1927,11 +1928,6 @@ ccnet_user_manager_get_emailusers_in_list (CcnetUserManager *manager,
         return NULL;
     }
     GString *sql = g_string_new ("");
-    g_string_printf (sql, "SELECT e.id, e.email, is_staff, is_active, ctime, "
-                          "role, passwd FROM EmailUser e "
-                          "LEFT JOIN UserRole r ON e.email = r.email "
-                          "WHERE e.email IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-
     for (i = 0; i < 20; i++) {
         if (i < user_num) {
             j_obj = json_array_get (j_array, i);
@@ -1941,6 +1937,36 @@ ccnet_user_manager_get_emailusers_in_list (CcnetUserManager *manager,
             args[i] = "";
         }
     }
+
+#ifdef HAVE_LDAP
+    if (manager->use_ldap) {
+        if (strcmp (source, "LDAP") == 0) {
+            g_string_printf (sql, "SELECT l.id, l.email, is_staff, is_active, role "
+                                  "FROM LDAPUsers l LEFT JOIN UserRole r "
+                                  "ON l.email = r.email "
+                                  "WHERE l.email IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+            if (ccnet_db_statement_foreach_row (manager->priv->db, sql->str, get_ldap_emailusers_cb, &ret, 20,
+                                        "string", args[0], "string", args[1], "string", args[2],
+                                        "string", args[3], "string", args[4], "string", args[5],
+                                        "string", args[6], "string", args[7], "string", args[8],
+                                        "string", args[9], "string", args[10], "string", args[11],
+                                        "string", args[12], "string", args[13], "string", args[14],
+                                        "string", args[15], "string", args[16], "string", args[17],
+                                        "string", args[18], "string", args[19]) < 0)
+                ccnet_warning("Failed to get users in list %s.\n", user_list);
+
+            goto out;
+        }
+    }
+#endif
+    if (strcmp (source, "DB") != 0)
+        goto out;
+
+    g_string_printf (sql, "SELECT e.id, e.email, is_staff, is_active, ctime, "
+                          "role, passwd FROM EmailUser e "
+                          "LEFT JOIN UserRole r ON e.email = r.email "
+                          "WHERE e.email IN (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+
     if (ccnet_db_statement_foreach_row (manager->priv->db, sql->str, get_emailusers_cb, &ret, 20,
                                         "string", args[0], "string", args[1], "string", args[2],
                                         "string", args[3], "string", args[4], "string", args[5],
@@ -1951,6 +1977,7 @@ ccnet_user_manager_get_emailusers_in_list (CcnetUserManager *manager,
                                         "string", args[18], "string", args[19]) < 0)
         ccnet_warning("Failed to get users in list %s.\n", user_list);
 
+out:
     json_decref (j_array);
     g_string_free (sql, TRUE);
 
