@@ -15,7 +15,11 @@ install-data-local:
 if MACOS
 	sed -i '' -e "s|(DESTDIR)|${DESTDIR}|g" $(pcfiles)
 else
+if BSD
+	sed -i '' "s|(DESTDIR)|${PREFIX}|g" $(pcfiles)
+else
 	${SED} -i "s|(DESTDIR)|${DESTDIR}|g" $(pcfiles)
+endif
 endif
 
 dist-hook:
