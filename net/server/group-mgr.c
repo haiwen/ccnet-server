@@ -90,7 +90,7 @@ open_db (CcnetGroupManager *manager)
         return -1;
     
     manager->priv->db = db;
-    if ((manager->session->create_tables || ccnet_db_type(db) != CCNET_DB_TYPE_MYSQL)
+    if ((manager->session->create_tables || ccnet_db_type(db) == CCNET_DB_TYPE_PGSQL)
         && check_db_table (manager, db) < 0) {
         ccnet_warning ("Failed to create group db tables.\n");
         return -1;

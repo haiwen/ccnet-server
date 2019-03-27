@@ -75,7 +75,7 @@ open_db (CcnetOrgManager *manager)
         return -1;
     
     manager->priv->db = db;
-    if ((manager->session->create_tables || ccnet_db_type(db) != CCNET_DB_TYPE_MYSQL)
+    if ((manager->session->create_tables || ccnet_db_type(db) == CCNET_DB_TYPE_PGSQL)
          && check_db_table (db) < 0) {
         ccnet_warning ("Failed to create org db tables.\n");
         return -1;
