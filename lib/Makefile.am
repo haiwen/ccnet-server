@@ -30,7 +30,7 @@ noinst_HEADERS = buffer.h \
 ccnetincludedir = $(includedir)/ccnet
 ccnetinclude_DATA = ccnet-object.h
 
-libccnet_la_CPPFLAGS = $(AM_CPPFLAGS) -DCCNET_LIB @PTHREAD_CFLAGS@
+libccnet_la_CPPFLAGS = $(AM_CPPFLAGS) -DCCNET_LIB @PTHREAD_CFLAGS@ @SSL_CFLAGS@
 
 libccnet_la_SOURCES = ccnet-client.c packet-io.c libccnet_utils.c \
 	message.c proc-factory.c \
@@ -53,6 +53,8 @@ libccnet_la_LIBADD = @PTHREAD_LIBS@ @GLIB2_LIBS@ @GOBJECT_LIBS@ @LIB_GDI32@ \
 
 
 noinst_LTLIBRARIES = libccnetd.la
+
+libccnetd_la_CPPFLAGS = $(AM_CPPFLAGS) @SSL_CFLAGS@
 
 libccnetd_la_SOURCES = utils.c db.c job-mgr.c \
 	rsa.c bloom-filter.c marshal.c net.c timer.c ccnet-session-base.c \
