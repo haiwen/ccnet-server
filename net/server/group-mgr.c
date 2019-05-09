@@ -1188,6 +1188,41 @@ ccnet_group_manager_get_top_groups (CcnetGroupManager *mgr,
 }
 
 GList*
+ccnet_group_manager_list_all_departments (CcnetGroupManager *mgr,
+                                          GError **error)
+{
+    CcnetDB *db = mgr->priv->db;
+    GList *ret = NULL;
+    GString *sql = g_string_new ("");
+    const char *table_name = mgr->priv->table_name;
+    int rc;
+    int db_type = ccnet_db_type(db);
+
+    if (db_type == CCNET_DB_TYPE_PGSQL) {
+        g_string_printf (sql, "SELECT group_id, group_name, "
+                              "creator_name, timestamp, type, "
+                              "parent_group_id FROM \"%s\" "
+                              "WHERE parent_group_id = -1 OR parent_group_id > 0 "
+                              "ORDER BY group_id", table_name);
+        rc = ccnet_db_statement_foreach_row (db, sql->str,
+                                             get_all_ccnetgroups_cb, &ret, 0);
+    } else {
+        g_string_printf (sql, "SELECT `group_id`, `group_name`, "
+                              "`creator_name`, `timestamp`, `type`, `parent_group_id` FROM `%s` "
+                              "WHERE parent_group_id = -1 OR parent_group_id > 0 "
+                              "ORDER BY group_id", table_name);
+        rc = ccnet_db_statement_foreach_row (db, sql->str,
+                                             get_all_ccnetgroups_cb, &ret, 0);
+    }
+    g_string_free (sql, TRUE);
+
+    if (rc < 0)
+        return NULL;
+
+    return g_list_reverse (ret);
+}
+
+GList*
 ccnet_group_manager_get_all_groups (CcnetGroupManager *mgr,
                                     int start, int limit, GError **error)
 {

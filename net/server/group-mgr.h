@@ -111,6 +111,10 @@ ccnet_group_manager_is_group_user (CcnetGroupManager *mgr,
                                    gboolean in_structure);
 
 GList*
+ccnet_group_manager_list_all_departments (CcnetGroupManager *mgr,
+                                          GError **error);
+
+GList*
 ccnet_group_manager_get_all_groups (CcnetGroupManager *mgr,
                                     int start, int limit, GError **error);
 
