@@ -799,7 +799,7 @@ ccnet_group_manager_get_groups_by_user (CcnetGroupManager *mgr,
 
     /* Get ancestor groups in descending order by group_id.*/
     GString *paths = g_string_new ("");
-    g_string_printf (sql, "");
+    g_string_erase (sql, 0, -1);
     for (ptr = groups; ptr; ptr = ptr->next) {
         group = ptr->data;
         g_object_get (group, "parent_group_id", &parent_group_id, NULL);
