@@ -1,4 +1,4 @@
-from pysearpc import SearpcClient, searpc_func, SearpcError
+from pysearpc import SearpcClient, searpc_func, SearpcError, NamedPipeClient
 
 from ccnet.status_code import SC_CLIENT_CALL, SS_CLIENT_CALL, \
     SC_CLIENT_MORE, SS_CLIENT_MORE, SC_SERVER_RET, \
@@ -169,11 +169,10 @@ class CcnetRpcClient(RpcClientBase):
         pass
 
 
-class CcnetThreadedRpcClient(RpcClientBase):
+class CcnetThreadedRpcClient(NamedPipeClient):
 
-    def __init__(self, ccnet_client_pool, retry_num=1, *args, **kwargs):
-        RpcClientBase.__init__(self, ccnet_client_pool, "ccnet-threaded-rpcserver",
-                               *args, **kwargs)
+    def __init__(self, socket_path):
+        NamedPipeClient.__init__(self, socket_path, "ccnet-threaded-rpcserver")
 
     @searpc_func("int", ["string", "string", "int", "int"])
     def add_emailuser(self, email, passwd, is_staff, is_active):
