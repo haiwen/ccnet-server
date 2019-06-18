@@ -360,7 +360,10 @@ main (int argc, char **argv)
 #endif
 
     ccnet_session_start (session);
-    ccnet_start_rpc(session);
+    if(ccnet_start_rpc(session) < 0) {
+        ccnet_warning ("Failed to start ccnet rpc server.\n");
+        exit (-1);
+    }
 
     /* actually enter the event loop */
     event_dispatch ();

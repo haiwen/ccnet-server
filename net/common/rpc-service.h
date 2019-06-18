@@ -5,7 +5,7 @@
 
 struct CcnetSession;
 
-void ccnet_start_rpc(CcnetSession *session);
+int ccnet_start_rpc(CcnetSession *session);
 
 char *ccnet_rpc_list_peers(GError **error);
 GList *ccnet_rpc_list_resolving_peers (GError **error);
