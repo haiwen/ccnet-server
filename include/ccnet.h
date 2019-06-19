@@ -25,34 +25,6 @@
 
 #include <searpc-client.h>
 
-/* mainloop */
-
-void ccnet_main (CcnetClient *client);
-
-typedef void (*RegisterServiceCB) (gboolean success);
-void ccnet_register_service (CcnetClient *client,
-                             const char *service, const char *group,
-                             GType proc_type, RegisterServiceCB cb);
-gboolean ccnet_register_service_sync (CcnetClient *client,
-                                      const char *service,
-                                      const char *group);
-CcnetClient *ccnet_init (const char *central_config_dir, const char *confdir);
-
-void ccnet_send_command (CcnetClient *client, const char *command,
-                         SendcmdProcRcvrspCallback cmd_cb, void *cbdata);
-
-/* client pool */
-
-struct CcnetClientPool;
-typedef struct CcnetClientPool CcnetClientPool;
-
-CcnetClient *
-ccnet_client_pool_get_client (struct CcnetClientPool *cpool);
-
-void
-ccnet_client_pool_return_client (struct CcnetClientPool *cpool,
-                                 CcnetClient *client);
-
 GList *ccnet_get_groups_by_user (SearpcClient *client, const char *user, int return_ancestors);
 GList *ccnet_get_org_groups_by_user (SearpcClient *client, const char *user, int org_id);
 GList *

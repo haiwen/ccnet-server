@@ -38,11 +38,10 @@ libccnet_la_SOURCES = ccnet-client.c packet-io.c libccnet_utils.c \
 	peer.c sendcmd-proc.c \
 	mqclient-proc.c invoke-service-proc.c \
 	marshal.c \
-	mainloop.c cevent.c timer.c ccnet-session-base.c job-mgr.c \
-	rpcserver-proc.c ccnetrpc-transport.c threaded-rpcserver-proc.c \
+	cevent.c timer.c ccnet-session-base.c job-mgr.c \
+	rpcserver-proc.c threaded-rpcserver-proc.c \
 	ccnetobj.c \
-	async-rpc-proc.c ccnet-rpc-wrapper.c \
-	client-pool.c
+	async-rpc-proc.c ccnet-rpc-wrapper.c
 
 EXTRA_DIST = ccnetobj.vala rpc_table.py
 

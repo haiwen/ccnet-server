@@ -5,7 +5,6 @@
 #include <ccnet.h>
 #include <ccnet-object.h>
 #include <searpc-client.h>
-#include <ccnet/ccnetrpc-transport.h>
 
 GList *
 ccnet_get_groups_by_user (SearpcClient *client, const char *user, int return_ancestors)
