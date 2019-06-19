@@ -36,11 +36,14 @@
 extern CcnetSession *session;
 
 #include <searpc.h>
+#include <searpc-named-pipe-transport.h>
 
 #include "searpc-signature.h"
 #include "searpc-marshal.h"
 
-void
+#define CCNET_SOCKET_NAME "ccnet-rpc.sock"
+
+int
 ccnet_start_rpc(CcnetSession *session)
 {
     searpc_server_init (register_marshals);
@@ -52,9 +55,6 @@ ccnet_start_rpc(CcnetSession *session)
 
 #ifdef CCNET_SERVER
     searpc_create_service ("ccnet-threaded-rpcserver");
-    ccnet_proc_factory_register_processor (session->proc_factory,
-                                           "ccnet-threaded-rpcserver",
-                                           CCNET_TYPE_THREADED_RPCSERVER_PROC);
 #endif
 
     searpc_server_register_function ("ccnet-rpcserver",
@@ -413,6 +413,15 @@ ccnet_start_rpc(CcnetSession *session)
 
 #endif  /* CCNET_SERVER */
 
+    char *path = g_build_filename (session->config_dir, CCNET_SOCKET_NAME, NULL);
+    SearpcNamedPipeServer *server = searpc_create_named_pipe_server (path);
+    if (!server) {
+        ccnet_warning ("Failed to create named pipe server.\n");
+        g_free (path);
+        return -1;
+    }
+
+    return searpc_named_pipe_server_start (server);
 }
 
 char *
