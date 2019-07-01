@@ -25,6 +25,8 @@
 
 #include <searpc-client.h>
 
+#define CCNET_RPC_PIPE_NAME "ccnet-rpc.sock"
+
 GList *ccnet_get_groups_by_user (SearpcClient *client, const char *user, int return_ancestors);
 GList *ccnet_get_org_groups_by_user (SearpcClient *client, const char *user, int org_id);
 GList *
