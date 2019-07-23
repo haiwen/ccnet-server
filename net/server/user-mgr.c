@@ -666,11 +666,11 @@ static int check_db_table (CcnetDB *db)
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
-        if (!pgsql_index_exists (db, "emailuser_reference_id_idx")) {
-            sql = "CREATE UNIQUE INDEX emailuser_reference_id_idx ON EmailUser (reference_id)";
-            if (ccnet_db_query (db, sql) < 0)
-                return -1;
-        }
+        //if (!pgsql_index_exists (db, "emailuser_reference_id_idx")) {
+        //    sql = "CREATE UNIQUE INDEX emailuser_reference_id_idx ON EmailUser (reference_id)";
+        //    if (ccnet_db_query (db, sql) < 0)
+        //        return -1;
+        //}
 
         sql = "CREATE TABLE IF NOT EXISTS Binding (email VARCHAR(255), peer_id CHAR(41),"
             "UNIQUE (peer_id))";
@@ -682,11 +682,11 @@ static int check_db_table (CcnetDB *db)
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
-        if (!pgsql_index_exists (db, "userrole_email_idx")) {
-            sql = "CREATE INDEX userrole_email_idx ON UserRole (email)";
-            if (ccnet_db_query (db, sql) < 0)
-                return -1;
-        }
+        //if (!pgsql_index_exists (db, "userrole_email_idx")) {
+        //    sql = "CREATE INDEX userrole_email_idx ON UserRole (email)";
+        //    if (ccnet_db_query (db, sql) < 0)
+        //        return -1;
+        //}
 
         sql = "CREATE TABLE IF NOT EXISTS LDAPUsers ("
           "id SERIAL PRIMARY KEY, "
@@ -696,17 +696,17 @@ static int check_db_table (CcnetDB *db)
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
-        if (!pgsql_index_exists (db, "ldapusers_email_idx")) {
-            sql = "CREATE UNIQUE INDEX ldapusers_email_idx ON LDAPUsers (email)";
-            if (ccnet_db_query (db, sql) < 0)
-                return -1;
-        }
+        //if (!pgsql_index_exists (db, "ldapusers_email_idx")) {
+        //    sql = "CREATE UNIQUE INDEX ldapusers_email_idx ON LDAPUsers (email)";
+        //    if (ccnet_db_query (db, sql) < 0)
+        //        return -1;
+        //}
 
-        if (!pgsql_index_exists (db, "ldapusers_reference_id_idx")) {
-            sql = "CREATE UNIQUE INDEX ldapusers_reference_id_idx ON LDAPUsers (reference_id)";
-            if (ccnet_db_query (db, sql) < 0)
-                return -1;
-        }
+        //if (!pgsql_index_exists (db, "ldapusers_reference_id_idx")) {
+        //    sql = "CREATE UNIQUE INDEX ldapusers_reference_id_idx ON LDAPUsers (reference_id)";
+        //    if (ccnet_db_query (db, sql) < 0)
+        //        return -1;
+        //}
 
         sql = "CREATE TABLE IF NOT EXISTS LDAPConfig (cfg_group VARCHAR(255) NOT NULL,"
           "cfg_key VARCHAR(255) NOT NULL, value VARCHAR(255), property INTEGER)";
@@ -1789,20 +1789,22 @@ ccnet_user_manager_set_reference_id (CcnetUserManager *manager,
 {
     int rc;
     char *sql;
-    gboolean exists;
+    gboolean exists, err;
 
 #ifdef HAVE_LDAP
     if (manager->use_ldap) {
         sql = "SELECT email FROM LDAPUsers WHERE email = ?";
-        exists = ccnet_db_statement_exists (manager->priv->db, sql,
+        exists = ccnet_db_statement_exists (manager->priv->db, sql, &err,
                                             1, "string", primary_id);
+        if (err)
+            return -1;
         /* Make sure reference_id is unique */
         if (exists) {
             sql = "SELECT 1 FROM EmailUser e, LDAPUsers l "
                   "WHERE (e.reference_id=? AND e.email!=?) OR "
                   "(l.reference_id=? AND l.email!=?) OR "
                   "(e.email=? AND e.email!=?) OR (l.email=? AND l.email!=?)";
-            exists = ccnet_db_statement_exists (manager->priv->db, sql,
+            exists = ccnet_db_statement_exists (manager->priv->db, sql, &err,
                                                 8, "string", reference_id,
                                                 "string", primary_id,
                                                 "string", reference_id,
@@ -1811,6 +1813,8 @@ ccnet_user_manager_set_reference_id (CcnetUserManager *manager,
                                                 "string", primary_id,
                                                 "string", reference_id,
                                                 "string", primary_id);
+            if (err)
+                return -1;
             if (exists) {
                 ccnet_warning ("Failed to set reference id, email '%s' exists\n", reference_id);
                 return -1;
@@ -1828,15 +1832,17 @@ ccnet_user_manager_set_reference_id (CcnetUserManager *manager,
 #endif
 
     sql = "SELECT email FROM EmailUser WHERE email = ?";
-    exists = ccnet_db_statement_exists (manager->priv->db, sql,
+    exists = ccnet_db_statement_exists (manager->priv->db, sql, &err,
                                         1, "string", primary_id);
+    if (err)
+        return -1;
     /* Make sure reference_id is unique */
     if (exists) {
         sql = "SELECT 1 FROM EmailUser e, LDAPUsers l "
               "WHERE (e.reference_id=? AND e.email!=?) OR "
               "(l.reference_id=? AND l.email!=?) OR "
               "(e.email=? AND e.email!=?) OR (l.email=? AND l.email!=?)";
-        exists = ccnet_db_statement_exists (manager->priv->db, sql,
+        exists = ccnet_db_statement_exists (manager->priv->db, sql, &err,
                                             8, "string", reference_id,
                                             "string", primary_id,
                                             "string", reference_id,
@@ -1845,6 +1851,8 @@ ccnet_user_manager_set_reference_id (CcnetUserManager *manager,
                                             "string", primary_id,
                                             "string", reference_id,
                                             "string", primary_id);
+        if (err)
+            return -1;
         if (exists) {
             ccnet_warning ("Failed to set reference id, email '%s' exists\n", reference_id);
             return -1;

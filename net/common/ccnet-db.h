@@ -3,7 +3,6 @@
 
 #define DB_SQLITE "sqlite"
 #define DB_MYSQL "mysql"
-#define DB_PGSQL "pgsql"
 
 enum {
     CCNET_DB_TYPE_SQLITE,
@@ -28,6 +27,7 @@ ccnet_db_new_mysql (const char *host,
                     const char *charset,
                     int max_connections);
 
+#if 0
 CcnetDB *
 ccnet_db_new_pgsql (const char *host,
                     unsigned int port,
@@ -36,12 +36,10 @@ ccnet_db_new_pgsql (const char *host,
                     const char *db_name,
                     const char *unix_socket,
                     int max_connections);
+#endif
 
 CcnetDB *
 ccnet_db_new_sqlite (const char *db_path);
-
-void
-ccnet_db_free (CcnetDB *db);
 
 int
 ccnet_db_type (CcnetDB *db);
@@ -102,21 +100,13 @@ ccnet_db_trans_foreach_selected_row (CcnetDBTrans *trans, const char *sql,
                                      CcnetDBRowFunc callback, void *data,
                                      int n, ...);
 
-/* Escape a string contant by doubling '\" characters.
- */
-char *
-ccnet_db_escape_string (CcnetDB *db, const char *from);
-
-gboolean
-pgsql_index_exists (CcnetDB *db, const char *index_name);
-
 /* Prepared Statements */
 
 int
 ccnet_db_statement_query (CcnetDB *db, const char *sql, int n, ...);
 
 gboolean
-ccnet_db_statement_exists (CcnetDB *db, const char *sql, int n, ...);
+ccnet_db_statement_exists (CcnetDB *db, const char *sql, gboolean *db_err, int n, ...);
 
 int
 ccnet_db_statement_foreach_row (CcnetDB *db, const char *sql,

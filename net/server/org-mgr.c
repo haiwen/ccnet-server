@@ -175,11 +175,11 @@ static int check_db_table (CcnetDB *db)
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
-        if (!pgsql_index_exists (db, "orguser_email_idx")) {
-            sql = "CREATE INDEX orguser_email_idx ON OrgUser (email)";
-            if (ccnet_db_query (db, sql) < 0)
-                return -1;
-        }
+        //if (!pgsql_index_exists (db, "orguser_email_idx")) {
+        //    sql = "CREATE INDEX orguser_email_idx ON OrgUser (email)";
+        //    if (ccnet_db_query (db, sql) < 0)
+        //        return -1;
+        //}
 
         sql = "CREATE TABLE IF NOT EXISTS OrgGroup (org_id INTEGER, "
             "group_id INTEGER, "
@@ -187,11 +187,11 @@ static int check_db_table (CcnetDB *db)
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
-        if (!pgsql_index_exists (db, "orggroup_groupid_idx")) {
-            sql = "CREATE INDEX orggroup_groupid_idx ON OrgGroup (group_id)";
-            if (ccnet_db_query (db, sql) < 0)
-                return -1;
-        }
+        //if (!pgsql_index_exists (db, "orggroup_groupid_idx")) {
+        //    sql = "CREATE INDEX orggroup_groupid_idx ON OrgGroup (group_id)";
+        //    if (ccnet_db_query (db, sql) < 0)
+        //        return -1;
+        //}
     }
 
     return 0;
@@ -548,10 +548,17 @@ ccnet_org_manager_is_org_group (CcnetOrgManager *mgr,
                                 int group_id,
                                 GError **error)
 {
+    gboolean exists, err;
+
     CcnetDB *db = mgr->priv->db;
 
-    return ccnet_db_statement_exists (db, "SELECT group_id FROM OrgGroup "
-                                      "WHERE group_id = ?", 1, "int", group_id);
+    exists = ccnet_db_statement_exists (db, "SELECT group_id FROM OrgGroup "
+                                        "WHERE group_id = ?", &err, 1, "int", group_id);
+    if (err) {
+        ccnet_warning ("DB error when check group exist in OrgGroup.\n");
+        return 0;
+    }
+    return exists;
 }
 
 int
@@ -724,11 +731,18 @@ ccnet_org_manager_org_user_exists (CcnetOrgManager *mgr,
                                    const char *email,
                                    GError **error)
 {
+    gboolean exists, err;
+
     CcnetDB *db = mgr->priv->db;
 
-    return ccnet_db_statement_exists (db, "SELECT org_id FROM OrgUser WHERE "
-                                      "org_id = ? AND email = ?",
-                                      2, "int", org_id, "string", email);
+    exists = ccnet_db_statement_exists (db, "SELECT org_id FROM OrgUser WHERE "
+                                        "org_id = ? AND email = ?", &err,
+                                        2, "int", org_id, "string", email);
+    if (err) {
+        ccnet_warning ("DB error when check user exist in OrgUser.\n");
+        return 0;
+    }
+    return exists;
 }
 
 char *
