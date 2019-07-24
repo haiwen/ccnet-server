@@ -7,6 +7,7 @@ AM_CPPFLAGS = @GLIB2_CFLAGS@ @GOBJECT_CFLAGS@ \
 	-I$(top_builddir)/include \
 	-I$(top_builddir)/lib \
 	@SEARPC_CFLAGS@ \
+	@MYSQL_CFLAGS@ \
 	-Wall
 
 bin_PROGRAMS = ccnet-server
@@ -46,11 +47,10 @@ ccnet_server_SOURCES = ccnet-server.c \
 	$(common_srcs)
 
 ccnet_server_LDADD = @LIBEVENT_LIBS@ $(top_builddir)/lib/libccnetd.la \
-           $(top_builddir)/net/common/db-wrapper/libdbwrapper.la \
            @GLIB2_LIBS@ @GOBJECT_LIBS@ @SSL_LIBS@ @LIB_RT@ @LIB_UUID@ -lsqlite3 \
            -lpthread \
            @LIB_WS32@ @LIB_INTL@ @LIB_IPHLPAPI@ @SEARPC_LIBS@ \
-           @LDAP_LIBS@ @MYSQL_LIBS@ @PGSQL_LIBS@
+           @LDAP_LIBS@ @MYSQL_LIBS@ -lsqlite3 
 
 
 ccnet_server_LDFLAGS = @CONSOLE@ -no-undefined

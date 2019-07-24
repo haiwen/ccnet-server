@@ -1,5 +1,3 @@
-SUBDIRS = db-wrapper
-
 PROC_HEADER_FILES = \
 	$(addprefix processors/, \
 	rcvmsg-proc.h \

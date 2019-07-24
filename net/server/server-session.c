@@ -195,7 +195,7 @@ static int init_mysql_database (CcnetSession *session)
 
 #endif
 
-#ifdef HAVE_POSTGRESQL
+#if 0
 
 static int init_pgsql_database (CcnetSession *session)
 {
@@ -263,7 +263,7 @@ load_database_config (CcnetSession *session)
         ret = init_mysql_database (session);
     }
 #endif
-#ifdef HAVE_POSTGRESQL
+#if 0
     else if (strncasecmp (engine, DB_PGSQL, sizeof(DB_PGSQL)) == 0) {
         ccnet_debug ("Use database PostgreSQL\n");
         ret = init_pgsql_database (session);

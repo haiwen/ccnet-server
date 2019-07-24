@@ -197,11 +197,11 @@ static int check_db_table (CcnetGroupManager *manager, CcnetDB *db)
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
-        if (!pgsql_index_exists (db, "groupuser_username_idx")) {
-            sql = "CREATE INDEX groupuser_username_idx ON GroupUser (user_name)";
-            if (ccnet_db_query (db, sql) < 0)
-                return -1;
-        }
+        //if (!pgsql_index_exists (db, "groupuser_username_idx")) {
+        //    sql = "CREATE INDEX groupuser_username_idx ON GroupUser (user_name)";
+        //    if (ccnet_db_query (db, sql) < 0)
+        //        return -1;
+        //}
 
         sql = "CREATE TABLE IF NOT EXISTS GroupDNPair (group_id INTEGER,"
             " dn VARCHAR(255))";
@@ -213,11 +213,11 @@ static int check_db_table (CcnetGroupManager *manager, CcnetDB *db)
         if (ccnet_db_query (db, sql) < 0)
             return -1;
 
-        if (!pgsql_index_exists (db, "structure_path_idx")) {
-            sql = "CREATE INDEX structure_path_idx ON GroupStructure (path)";
-            if (ccnet_db_query (db, sql) < 0)
-                return -1;
-        }
+        //if (!pgsql_index_exists (db, "structure_path_idx")) {
+        //    sql = "CREATE INDEX structure_path_idx ON GroupStructure (path)";
+        //    if (ccnet_db_query (db, sql) < 0)
+        //        return -1;
+        //}
 
     }
     g_string_free (group_sql, TRUE);
@@ -410,14 +410,20 @@ int ccnet_group_manager_create_org_group (CcnetGroupManager *mgr,
 static gboolean
 check_group_staff (CcnetDB *db, int group_id, const char *user_name, gboolean in_structure)
 {
+    gboolean exists, err;
     if (!in_structure) {
-        return ccnet_db_statement_exists (db, "SELECT group_id FROM GroupUser WHERE "
-                                              "group_id = ? AND user_name = ? AND "
-                                              "is_staff = 1",
-                                              2, "int", group_id, "string", user_name);
+        exists = ccnet_db_statement_exists (db, "SELECT group_id FROM GroupUser WHERE "
+                                          "group_id = ? AND user_name = ? AND "
+                                          "is_staff = 1", &err,
+                                          2, "int", group_id, "string", user_name);
+        if (err) {
+            ccnet_warning ("DB error when check staff user exist in GroupUser.\n");
+            return FALSE;
+        }
+        return exists;
     }
 
-    gboolean exists;
+
     GString *sql = g_string_new("");
     g_string_printf (sql, "SELECT path FROM GroupStructure WHERE group_id=?");
     char *path = ccnet_db_statement_get_string (db, sql->str, 1, "int", group_id);
@@ -426,17 +432,22 @@ check_group_staff (CcnetDB *db, int group_id, const char *user_name, gboolean in
     if (!path) {
         exists = ccnet_db_statement_exists (db, "SELECT group_id FROM GroupUser WHERE "
                                             "group_id = ? AND user_name = ? AND "
-                                            "is_staff = 1",
+                                            "is_staff = 1", &err,
                                             2, "int", group_id, "string", user_name);
     } else {
         g_string_printf (sql, "SELECT group_id FROM GroupUser WHERE "
                               "group_id IN (%s) AND user_name = ? AND "
                               "is_staff = 1", path);
-        exists = ccnet_db_statement_exists (db, sql->str,
+        exists = ccnet_db_statement_exists (db, sql->str, &err,
                                             1, "string", user_name);
     }
     g_string_free (sql, TRUE);
     g_free (path);
+
+    if (err) {
+        ccnet_warning ("DB error when check staff user exist in GroupUser.\n");
+        return FALSE;
+    }
 
     return exists;
 }
@@ -448,7 +459,7 @@ int ccnet_group_manager_remove_group (CcnetGroupManager *mgr,
 {
     CcnetDB *db = mgr->priv->db;
     GString *sql = g_string_new ("");
-    gboolean exists;
+    gboolean exists, err;
     const char *table_name = mgr->priv->table_name;
 
     /* No permission check here, since both group staff and seahub staff
@@ -459,7 +470,12 @@ int ccnet_group_manager_remove_group (CcnetGroupManager *mgr,
             g_string_printf (sql, "SELECT 1 FROM \"%s\" WHERE parent_group_id=?", table_name);
         else
             g_string_printf (sql, "SELECT 1 FROM `%s` WHERE parent_group_id=?", table_name);
-        exists = ccnet_db_statement_exists (db, sql->str, 1, "int", group_id);
+        exists = ccnet_db_statement_exists (db, sql->str, &err, 1, "int", group_id);
+        if (err) {
+            ccnet_warning ("DB error when check remove group.\n");
+            g_string_free (sql, TRUE);
+            return -1;
+        }
         if (exists) {
             ccnet_warning ("Failed to remove group [%d] whose child group must be removed first.\n", group_id);
             g_string_free (sql, TRUE);
@@ -489,17 +505,21 @@ check_group_exists (CcnetGroupManager *mgr, CcnetDB *db, int group_id)
 {
     GString *sql = g_string_new ("");
     const char *table_name = mgr->priv->table_name;
-    gboolean exists;
+    gboolean exists, err;
 
     if (ccnet_db_type(db) == CCNET_DB_TYPE_PGSQL) {
         g_string_printf (sql, "SELECT group_id FROM \"%s\" WHERE group_id=?", table_name);
-        exists = ccnet_db_statement_exists (db, sql->str, 1, "int", group_id);
+        exists = ccnet_db_statement_exists (db, sql->str, &err, 1, "int", group_id);
     } else {
         g_string_printf (sql, "SELECT group_id FROM `%s` WHERE group_id=?", table_name);
-        exists = ccnet_db_statement_exists (db, sql->str, 1, "int", group_id);
+        exists = ccnet_db_statement_exists (db, sql->str, &err, 1, "int", group_id);
     }
     g_string_free (sql, TRUE);
 
+    if (err) {
+        ccnet_warning ("DB error when check group exist.\n");
+        return FALSE;
+    }
     return exists;
 }
 
@@ -1088,9 +1108,14 @@ ccnet_group_manager_is_group_user (CcnetGroupManager *mgr,
 {
     CcnetDB *db = mgr->priv->db;
 
-    gboolean exists = ccnet_db_statement_exists (db, "SELECT group_id FROM GroupUser "
-                                                 "WHERE group_id=? AND user_name=?",
-                                                 2, "int", group_id, "string", user);
+    gboolean exists, err;
+    exists = ccnet_db_statement_exists (db, "SELECT group_id FROM GroupUser "
+                                        "WHERE group_id=? AND user_name=?", &err,
+                                        2, "int", group_id, "string", user);
+    if (err) {
+        ccnet_warning ("DB error when check user exist in GroupUser.\n");
+        return 0;
+    }
     if (!in_structure || exists)
         return exists ? 1 : 0;
 
