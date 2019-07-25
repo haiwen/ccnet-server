@@ -129,22 +129,6 @@ if test "$bwin32" = "true"; then
 fi
 AC_SUBST(CONSOLE)
 
-if test "x${MYSQL_CONFIG}" = "xdefault_mysql_config"; then
-	PKG_CHECK_MODULES(MYSQL, [mysqlclient], [have_mysql="yes"], [have_mysql="no"])
-    if test "x${have_mysql}" = "xyes"; then
-        AC_SUBST(MYSQL_CFLAGS)
-        AC_SUBST(MYSQL_LIBS)
-        AC_DEFINE([HAVE_MYSQL], 1, [Define to 1 if MySQL support is enabled])
-    fi
-else
-	AC_MSG_CHECKING([for MySQL])
-    MYSQL_CFLAGS=`${MYSQL_CONFIG} --include`
-    MYSQL_LIBS=`${MYSQL_CONFIG} --libs`
-	AC_MSG_RESULT([${MYSQL_CFLAGS}])
-    AC_SUBST(MYSQL_CFLAGS)
-    AC_SUBST(MYSQL_LIBS)
-fi
-
 if test "$bwin32" = true; then
   LIB_WS32=-lws2_32
   LIB_GDI32=-lgdi32
@@ -226,6 +210,22 @@ AC_SUBST(SEARPC_LIBS)
 PKG_CHECK_MODULES(LIBEVENT, [libevent >= $LIBEVENT_REQUIRED])
 AC_SUBST(LIBEVENT_CFLAGS)
 AC_SUBST(LIBEVENT_LIBS)
+
+if test "x${MYSQL_CONFIG}" = "xdefault_mysql_config"; then
+    PKG_CHECK_MODULES(MYSQL, [mysqlclient], [have_mysql="yes"], [have_mysql="no"])
+    if test "x${have_mysql}" = "xyes"; then
+        AC_SUBST(MYSQL_CFLAGS)
+        AC_SUBST(MYSQL_LIBS)
+        AC_DEFINE([HAVE_MYSQL], 1, [Define to 1 if MySQL support is enabled])
+    fi
+else
+    AC_MSG_CHECKING([for MySQL])
+    MYSQL_CFLAGS=`${MYSQL_CONFIG} --include`
+    MYSQL_LIBS=`${MYSQL_CONFIG} --libs`
+    AC_MSG_RESULT([${MYSQL_CFLAGS}])
+    AC_SUBST(MYSQL_CFLAGS)
+    AC_SUBST(MYSQL_LIBS)
+fi
 
 if test x${compile_python} = xyes; then
     AM_PATH_PYTHON([2.6])
