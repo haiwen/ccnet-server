@@ -5,22 +5,7 @@
 
 struct CcnetSession;
 
-void ccnet_start_rpc(CcnetSession *session);
-
-char *ccnet_rpc_list_peers(GError **error);
-GList *ccnet_rpc_list_resolving_peers (GError **error);
-
-
-GList* ccnet_rpc_get_peers_by_role(const char *role, GError **error);
-
-
-GObject *ccnet_rpc_get_peer(const char *peerid, GError **error);
-
-int
-ccnet_rpc_update_peer_address(const char *peer_id, const char *addr,
-                              int port, GError **error);
-
-GObject *ccnet_rpc_get_peer_by_idname(const char *idname, GError **error);
+int ccnet_start_rpc(CcnetSession *session);
 
 char *
 ccnet_rpc_list_users(GError **error);
@@ -32,39 +17,8 @@ ccnet_rpc_get_user(const char *userid, GError **error);
 GObject *
 ccnet_rpc_get_user_of_peer(const char *peerid, GError **error);
 
-
-GObject *ccnet_rpc_get_session_info(GError **error);
-
-int
-ccnet_rpc_add_client(const char *user_id, GError **error);
-
-int
-ccnet_rpc_add_role(const char *user_id, const char *role, GError **error);
-
-int
-ccnet_rpc_remove_role(const char *user_id, const char *role, GError **error);
-
-
 GList *ccnet_rpc_get_events(int offset, int limit, GError **error);
 int ccnet_rpc_count_event (GError **error);
-
-
-/**
- * ccnet_get_config:
- * 
- * Return the config value with key @key
- */
-char *
-ccnet_rpc_get_config (const char *key, GError **error);
-
-/**
- * ccnet_rpc_set_config:
- *
- * Set the value of config item with key @key to @value
- */
-int
-ccnet_rpc_set_config (const char *key, const char *value, GError **error);
-
 
 /**
  * ccnet_rpc_upload_profile:
@@ -74,18 +28,7 @@ ccnet_rpc_set_config (const char *key, const char *value, GError **error);
 int
 ccnet_rpc_upload_profile (const char *relay_id, GError **error);
 
-char *
-ccnet_rpc_pubkey_encrypt (const char *msg_base64,
-                          const char *peer_id,
-                          GError **error);
-
-char *
-ccnet_rpc_privkey_decrypt (const char *msg_base64, GError **error);
-
 #ifdef CCNET_SERVER
-
-GList *
-ccnet_rpc_list_peer_stat (GError **error);
 
 int
 ccnet_rpc_add_emailuser (const char *email, const char *passwd,
@@ -169,15 +112,6 @@ ccnet_rpc_remove_one_binding (const char *email, const char *peer_id,
 
 GList *
 ccnet_rpc_get_peers_by_email (const char *email, GError **error);
-
-char *
-ccnet_rpc_sign_message (const char *message, GError **error);
-
-int
-ccnet_rpc_verify_message (const char *message,
-                          const char *sig_base64,
-                          const char *peer_id,
-                          GError **error);
 
 int
 ccnet_rpc_create_group (const char *group_name, const char *user_name,
