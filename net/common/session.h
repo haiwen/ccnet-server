@@ -86,7 +86,6 @@ struct CcnetSession
     unsigned int                saving_pub : 1;
     unsigned int                encrypt_channel : 1;
 
-    int                         local_port;
     char                       *un_path;
     struct event                local_event;
     struct event                local_pipe_event;
