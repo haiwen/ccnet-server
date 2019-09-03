@@ -81,7 +81,6 @@ static int load_rsakey(CcnetSession *session)
     return 0; 
 }
 
-static void listen_on_localhost (CcnetSession *session);
 static void listen_on_pipe (CcnetSession *session);
 static void save_pubinfo (CcnetSession *session);
 
@@ -99,12 +98,12 @@ ccnet_session_load_config (CcnetSession *session,
     int ret = 0;
     char *config_file = NULL, *config_dir = NULL, *central_config_dir = NULL;
     char *id = NULL, *name = NULL, *port_str = NULL,
-        *lport_str = NULL, *un_path = NULL,
+        *un_path = NULL,
         *user_name = NULL;
 #ifdef CCNET_SERVER
     char *service_url;
 #endif
-    int port, local_port = 0;
+    int port;
     unsigned char sha1[20];
     GKeyFile *key_file;
 
@@ -147,7 +146,6 @@ ccnet_session_load_config (CcnetSession *session,
 #endif
     port_str = ccnet_key_file_get_string (key_file, "Network", "PORT");
 
-    lport_str = ccnet_key_file_get_string (key_file, "Client", "PORT");
     un_path = ccnet_key_file_get_string (key_file, "Client", "UNIX_SOCKET");
     
     if (port_str == NULL) {
@@ -166,9 +164,6 @@ ccnet_session_load_config (CcnetSession *session,
         goto onerror;
     }
 
-    if (lport_str)
-        local_port = atoi (lport_str);
-
     memcpy (session->base.id, id, 40);
     session->base.id[40] = '\0';
     session->base.name = g_strdup(name);
@@ -181,7 +176,6 @@ ccnet_session_load_config (CcnetSession *session,
     session->config_dir = config_dir;
     session->central_config_dir = central_config_dir;
     session->un_path = un_path;
-    session->local_port = local_port;
     session->keyf = key_file;
 
     load_rsakey(session);
@@ -193,7 +187,6 @@ onerror:
     g_free (name);
     g_free (user_name);
     g_free (port_str);
-    g_free (lport_str);
 #ifdef CCNET_SERVER
     g_free (service_url);
 #endif
@@ -252,15 +245,7 @@ ccnet_session_prepare (CcnetSession *session,
     if (test_config) {
         return 0;
     } else {
-        /* Open localhost, if failed, then the program will exists. This is used
-         * to prevent two instance of ccnet on the same port.
-         */
-#ifdef WIN32        
-        listen_on_localhost (session);
-#else
         listen_on_pipe (session);
-#endif
-        
         /* refresh pubinfo on every startup */
         save_pubinfo (session);
     }
@@ -328,8 +313,6 @@ ccnet_session_save_config (CcnetSession *session)
 #endif
     g_key_file_set_integer (session->keyf, "Network", "PORT",
                             session->base.public_port);
-
-    g_key_file_set_integer (session->keyf, "Client", "PORT", session->local_port);
 
     str = g_key_file_to_data (session->keyf, NULL, &error);
     if (error) {
@@ -405,22 +388,6 @@ static void accept_local_client (evutil_socket_t fd, short event, void *vsession
     ccnet_peer_set_net_state (peer, PEER_CONNECTED);
     ccnet_peer_manager_add_local_peer (session->peer_mgr, peer);
     g_object_unref (peer);
-}
-
-static void listen_on_localhost (CcnetSession *session)
-{
-    int sockfd;
-
-    if ( (sockfd = ccnet_net_bind_v4 ("127.0.0.1", &session->local_port)) < 0) {
-        printf ("listen on localhost failed\n");
-        exit (1);
-    }
-    ccnet_message ("Listen on 127.0.0.1 %d\n", session->local_port);
-
-    listen (sockfd, 5);
-    event_set (&session->local_event, sockfd, EV_READ | EV_PERSIST, 
-               accept_local_client, session);
-    event_add (&session->local_event, NULL);
 }
 
 #ifndef WIN32

@@ -241,17 +241,6 @@ make_configure_file (const char *config_file)
     }
 
     fprintf (fp, "\n");
-    fprintf (fp, "[Client]\n");
-
-    /* Use differnet ports for ccnet-daemon and ccnet-server */
-    if (port_str != NULL) {
-        /* ccnet-server */
-        fprintf (fp, "PORT = 13418\n");
-    } else {
-        /* ccnet-daemon */
-        fprintf (fp, "PORT = 13419\n");
-    }
-
     fclose (fp);
 
     fprintf (stdout, "done\n");
