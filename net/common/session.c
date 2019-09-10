@@ -81,7 +81,6 @@ static int load_rsakey(CcnetSession *session)
     return 0; 
 }
 
-static void listen_on_pipe (CcnetSession *session);
 static void save_pubinfo (CcnetSession *session);
 
 CcnetSession *
@@ -98,7 +97,6 @@ ccnet_session_load_config (CcnetSession *session,
     int ret = 0;
     char *config_file = NULL, *config_dir = NULL, *central_config_dir = NULL;
     char *id = NULL, *name = NULL, *port_str = NULL,
-        *un_path = NULL,
         *user_name = NULL;
 #ifdef CCNET_SERVER
     char *service_url;
@@ -146,8 +144,6 @@ ccnet_session_load_config (CcnetSession *session,
 #endif
     port_str = ccnet_key_file_get_string (key_file, "Network", "PORT");
 
-    un_path = ccnet_key_file_get_string (key_file, "Client", "UNIX_SOCKET");
-    
     if (port_str == NULL) {
         port = 0;
     } else {
@@ -175,7 +171,6 @@ ccnet_session_load_config (CcnetSession *session,
     session->config_file = config_file;
     session->config_dir = config_dir;
     session->central_config_dir = central_config_dir;
-    session->un_path = un_path;
     session->keyf = key_file;
 
     load_rsakey(session);
@@ -245,7 +240,6 @@ ccnet_session_prepare (CcnetSession *session,
     if (test_config) {
         return 0;
     } else {
-        listen_on_pipe (session);
         /* refresh pubinfo on every startup */
         save_pubinfo (session);
     }
@@ -367,100 +361,6 @@ static const char *net_status_string (int status)
         return "Unknown";
     }
 }
-
-static void accept_local_client (evutil_socket_t fd, short event, void *vsession)
-{
-    CcnetSession *session = vsession;
-    CcnetPacketIO *io;
-    int connfd;
-    CcnetPeer *peer;
-    static int local_id = 0;
-
-    connfd = accept (fd, NULL, 0);
-
-    ccnet_message ("Accepted a local client\n");
-
-    io = ccnet_packet_io_new_incoming (session, NULL, connfd);
-    peer = ccnet_peer_new (session->base.id);
-    peer->name = g_strdup_printf("local-%d", local_id++);
-    peer->is_local = TRUE;
-    ccnet_peer_set_io (peer, io);
-    ccnet_peer_set_net_state (peer, PEER_CONNECTED);
-    ccnet_peer_manager_add_local_peer (session->peer_mgr, peer);
-    g_object_unref (peer);
-}
-
-#ifndef WIN32
-
-static void listen_on_pipe (CcnetSession *session)
-{
-    int pipe_fd = socket (AF_UNIX, SOCK_STREAM, 0);
-    char *un_path = NULL;
-    if (pipe_fd < 0) {
-        ccnet_warning ("Failed to create unix socket fd : %s\n",
-                      strerror(errno));
-        goto failed;
-    }
-    
-    struct sockaddr_un saddr;
-    saddr.sun_family = AF_UNIX;
-
-    if (!session->un_path)
-        un_path = g_build_filename (session->config_dir, CCNET_PIPE_NAME, NULL);
-    else
-        un_path = g_strdup(session->un_path);
-
-    if (strlen(un_path) > sizeof(saddr.sun_path)-1) {
-        ccnet_warning ("Unix socket path %s is too long."
-                       "Please set or modify UNIX_SOCKET option in ccnet.conf.\n",
-                       un_path);
-        g_free (un_path);
-        goto failed;
-    }
-
-    if (g_file_test (un_path, G_FILE_TEST_EXISTS)) {
-        ccnet_warning ("socket file exists, delete it anyway\n");
-        if (g_unlink (un_path) < 0) {
-            ccnet_warning ("delete socket file failed : %s\n", strerror(errno));
-            goto failed;
-        }
-    }
-    
-    g_strlcpy (saddr.sun_path, un_path, sizeof(saddr.sun_path));
-    if (bind(pipe_fd, (struct sockaddr *)&saddr, sizeof(saddr)) < 0) {
-        ccnet_warning ("failed to bind unix socket fd to %s : %s\n",
-                      un_path, strerror(errno));
-        goto failed;
-    }
-
-    if (listen(pipe_fd, 3) < 0) {
-        ccnet_warning ("failed to listen to unix socket: %s\n", strerror(errno));
-        goto failed;
-    }
-
-    if (chmod(un_path, 0700) < 0) {
-        ccnet_warning ("failed to set permisson for unix socket %s: %s\n",
-                      un_path, strerror(errno));
-        goto failed;
-    }
-
-    event_set (&session->local_pipe_event, pipe_fd, EV_READ | EV_PERSIST, 
-               accept_local_client, session);
-    event_add (&session->local_pipe_event, NULL);
-
-    ccnet_message ("Listen on %s for local clients\n", un_path);
-
-    g_free (un_path);
-
-    return;
-
-failed:
-    ccnet_warning ("listen on unix socket failed\n");
-    exit (1);
-}
-
-#endif // WIN32
-
 
 void
 ccnet_session_start_network (CcnetSession *session)

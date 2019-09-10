@@ -90,7 +90,6 @@ struct _CcnetClient
     char                        *config_file;
 
     int                         daemon_port;
-    char                        *un_path;
 
     int                         connected : 1;
 
