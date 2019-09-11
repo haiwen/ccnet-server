@@ -86,9 +86,7 @@ struct CcnetSession
     unsigned int                saving_pub : 1;
     unsigned int                encrypt_channel : 1;
 
-    char                       *un_path;
     struct event                local_event;
-    struct event                local_pipe_event;
 
     int                         start_failure;  /* how many times failed 
                                                    to start the network */

@@ -134,7 +134,7 @@ int
 ccnet_client_load_confdir (CcnetClient *client, const char *central_config_dir_r, const char *config_dir_r)
 {
     char *config_file = NULL, *config_dir = NULL, *central_config_dir = NULL;
-    char *id = NULL, *name = NULL, *port_str = NULL, *un_path = NULL,
+    char *id = NULL, *name = NULL, *port_str = NULL,
         *user_name = NULL, *service_url = NULL;
     unsigned char sha1[20];
     GKeyFile *key_file;
@@ -174,7 +174,6 @@ ccnet_client_load_confdir (CcnetClient *client, const char *central_config_dir_r
     name = ccnet_util_key_file_get_string (key_file, "General", "NAME");
     service_url = ccnet_util_key_file_get_string (key_file, "General", "SERVICE_URL");
     port_str = ccnet_util_key_file_get_string (key_file, "Client", "PORT");
-    un_path = ccnet_util_key_file_get_string (key_file, "Client", "UNIX_SOCKET");
 
     if ( (id == NULL) || (strlen (id) != SESSION_ID_LENGTH) 
          || (ccnet_util_hex_to_sha1 (id, sha1) < 0) ) 
@@ -199,7 +198,6 @@ ccnet_client_load_confdir (CcnetClient *client, const char *central_config_dir_r
 
     if (port_str)
         client->daemon_port = atoi (port_str);
-    client->un_path = un_path;
 
     g_free (id);
     g_free (name);
@@ -218,67 +216,6 @@ onerror:
     g_free (config_file);
     g_free (service_url);
     return -1;
-}
-
-
-int
-ccnet_client_connect_daemon (CcnetClient *client, CcnetClientMode mode)
-{
-    evutil_socket_t sockfd;
-    /* CcnetProcessor *processor; */
-
-#ifdef WIN32
-    static int inited = 0;
-    if (inited == 0) {
-        inited = 1;
-        WSADATA     wsadata;
-        WSAStartup(0x0101, &wsadata);
-    }
-#endif
-
-    g_return_val_if_fail (client->connected == 0, -1);
-
-    client->mode = mode;
-
-#ifdef WIN32
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    struct sockaddr_in servaddr;
-    memset (&servaddr, 0, sizeof(servaddr));
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons (client->daemon_port);
-    ccnet_util_inet_pton (AF_INET, "127.0.0.1", &servaddr.sin_addr);
-    if (connect (sockfd, (struct sockaddr *) &servaddr, (socklen_t)sizeof(servaddr)) < 0)
-        return -1;
-#else
-    char *un_path = NULL;
-
-    sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
-    struct sockaddr_un servaddr;
-    servaddr.sun_family = AF_UNIX;
-
-    if (!client->un_path)
-        un_path = g_build_filename (client->config_dir, CCNET_PIPE_NAME, NULL);
-    else
-        un_path = g_strdup(client->un_path);
-
-    g_strlcpy (servaddr.sun_path, un_path, sizeof(servaddr.sun_path));
-    g_free (un_path);
-    if (connect(sockfd, (struct sockaddr *)&servaddr, (socklen_t)sizeof(servaddr)) < 0) {
-        return -1;
-    }
-#endif
-
-    client->connfd = sockfd;
-    client->io = ccnet_packet_io_new (client->connfd);
-
-    if (mode == CCNET_CLIENT_ASYNC)
-        ccnet_packet_io_set_callback (client->io, handle_packet, client);
-
-    client->connected = 1;
-
-    g_debug ("connected to daemon\n");
-
-    return client->connfd;
 }
 
 void
