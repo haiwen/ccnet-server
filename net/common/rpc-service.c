@@ -39,6 +39,8 @@ extern CcnetSession *session;
 
 #define CCNET_SOCKET_NAME "ccnet-rpc.sock"
 
+#define NAMED_PIPE_SERVER_THREAD_POOL_SIZE 50
+
 int
 ccnet_start_rpc(CcnetSession *session)
 {
@@ -313,7 +315,7 @@ ccnet_start_rpc(CcnetSession *session)
 #endif  /* CCNET_SERVER */
 
     char *path = g_build_filename (session->config_dir, CCNET_SOCKET_NAME, NULL);
-    SearpcNamedPipeServer *server = searpc_create_named_pipe_server (path);
+    SearpcNamedPipeServer *server = searpc_create_named_pipe_server (path, NAMED_PIPE_SERVER_THREAD_POOL_SIZE);
     if (!server) {
         ccnet_warning ("Failed to create named pipe server.\n");
         g_free (path);
