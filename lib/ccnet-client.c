@@ -47,7 +47,8 @@
 
 G_DEFINE_TYPE (CcnetClient, ccnet_client, CCNET_TYPE_SESSION_BASE);
 
-
+#define DEFAULT_NAME "server"
+#define DEFAULT_ID "8e4b13b49ca79f35732d9f44a0804940d985627c"
 
 static void handle_packet (ccnet_packet *packet, void *vclient);
 static void ccnet_client_free (GObject *object);
@@ -134,8 +135,7 @@ int
 ccnet_client_load_confdir (CcnetClient *client, const char *central_config_dir_r, const char *config_dir_r)
 {
     char *config_file = NULL, *config_dir = NULL, *central_config_dir = NULL;
-    char *id = NULL, *name = NULL, *port_str = NULL,
-        *user_name = NULL, *service_url = NULL;
+    char *port_str = NULL, *service_url = NULL;
     unsigned char sha1[20];
     GKeyFile *key_file;
     CcnetSessionBase *base = CCNET_SESSION_BASE(client);
@@ -169,28 +169,20 @@ ccnet_client_load_confdir (CcnetClient *client, const char *central_config_dir_r
         goto onerror;
     }
 
-    id = ccnet_util_key_file_get_string (key_file, "General", "ID");
-    user_name = ccnet_util_key_file_get_string (key_file, "General", "USER_NAME");
-    name = ccnet_util_key_file_get_string (key_file, "General", "NAME");
     service_url = ccnet_util_key_file_get_string (key_file, "General", "SERVICE_URL");
     port_str = ccnet_util_key_file_get_string (key_file, "Client", "PORT");
 
-    if ( (id == NULL) || (strlen (id) != SESSION_ID_LENGTH) 
-         || (ccnet_util_hex_to_sha1 (id, sha1) < 0) ) 
-    {
-        ccnet_error ("Wrong ID\n");
-        g_key_file_free (key_file);
-        goto onerror;
-    }
-
-   
-    memcpy (base->id, id, 40);
+    memcpy (base->id, DEFAULT_ID, 40);
     base->id[40] = '\0';
-    base->user_name = g_strdup(user_name);
-    base->name = g_strdup(name);
+    if (ccnet_util_hex_to_sha1 (base->id, sha1) < 0) {
+         ccnet_error ("Failed to get sha1 of ID.\n");
+         g_key_file_free (key_file);
+         goto onerror;
+    }
     memcpy (base->id_sha1, sha1, 20);
     if (service_url)
         base->service_url = g_strdup(service_url);
+    base->name = DEFAULT_NAME;
 
     client->config_file = g_strdup(config_file);
     client->config_dir = config_dir;
@@ -199,9 +191,6 @@ ccnet_client_load_confdir (CcnetClient *client, const char *central_config_dir_r
     if (port_str)
         client->daemon_port = atoi (port_str);
 
-    g_free (id);
-    g_free (name);
-    g_free (user_name);
     g_free (port_str);
     g_free (config_file);
     g_free (service_url);
@@ -209,9 +198,6 @@ ccnet_client_load_confdir (CcnetClient *client, const char *central_config_dir_r
     return 0;
 
 onerror:
-    g_free (id);
-    g_free (name);
-    g_free (user_name);
     g_free (port_str);
     g_free (config_file);
     g_free (service_url);

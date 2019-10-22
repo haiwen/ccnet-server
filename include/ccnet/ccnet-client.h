@@ -3,10 +3,6 @@
 #ifndef CCNET_CLIENT_SESSION_H
 #define CCNET_CLIENT_SESSION_H
 
-
-#define SESSION_ID_LENGTH         40
-
-
 #include <glib.h>
 #include <glib-object.h>
 

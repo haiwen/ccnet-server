@@ -23,8 +23,6 @@ struct _CcnetSessionBase {
     char            id[41];
     unsigned char   id_sha1[20];
 
-    char           *user_name;
-
     char           *name;
 
     int             public_port;

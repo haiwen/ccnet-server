@@ -28,6 +28,36 @@
 #include "log.h"
 
 #define THREAD_POOL_SIZE 50
+#define DEFAULT_NAME "server"
+#define DEFAULT_ID "8e4b13b49ca79f35732d9f44a0804940d985627c"
+static char PRIVATE_KEY[] =
+"-----BEGIN RSA PRIVATE KEY-----\n"
+"MIIEpAIBAAKCAQEAuZFwgxkKQGaqYyFMxIUz1JHnZPaOgEQ+fX/jRVYbGMiHkSbX\n"
+"K9X3XUHUGEjUt8b3zW6UZJGjgyV5S08YuaN0eE5z6Q6bnuWEhkTmgZgXaybc9Hiu\n"
+"y2WAHpKj+qbXcmewE0WEys/Ov9AIe0TRXmvL6r1793VcLSzgb/aIQA2WFg97DfEA\n"
+"hGAHo5BesKRfEEvXL6ZB9cGxXP9qIy0ObTvLXlOgbYchfV4rrXJk0u9xWjRyXABv\n"
+"2Myv3fgxmGmTR+TAw2G5GCKeh9IoIuWVMGPyjSlERGMqQYymNz3NgyWFayyZ5HQS\n"
+"tihCnflOGEiMHRkOwIczB16YZhan2YqKpsjHGwIBIwKCAQEArvbXzBBLfoyvR4XM\n"
+"Cb9rYgXozOh3usQAZ7MYHM2HQ0C6VahHN/WgFhl+1RF4Gv1tTKoW4nqwHJEL9oxn\n"
+"xPkzTNxBZrYAcT7NaKdc/diLG+LQVDdFuHWkrxyL+vUUR0vR5kjcSjGlrYmhmMvb\n"
+"WQaNEIbFVwhA92TTnMPfjNmcI2wRKI1K9NEKDAMIPSwW/sgkls2h4KW3Y7DooJ0k\n"
+"l0apjN/rlaR4ohZp6oMVifW8GFY43Xau+4dIrYTnvvSyvGvtB+8cWuhqqvWHRZdM\n"
+"rFjgOJoZH5l0zxt2dYW2WFiqgT7xXsvu6L+nylXktEMxC33rehYdPrd427J409A6\n"
+"caO5cwKBgQDyrBQ8UXu7cDAktiKTwH7+pA0wNyTvKsGYw0RcFILccpxty2r5gYhI\n"
+"eLFPVyjoYxwauW6vX3cSAYLKR+2PlYvkPpEvBQIJbaurx++ejez/KxYD65ZeFTfs\n"
+"Kb9A08hgMxCvJmnRvojhez1OZmmmWYPT57XeZXnCiNoyJWKA0mMNvwKBgQDDwn02\n"
+"o5n7ugetXIlV1PiStVogPPTBobh9jsXooQFh4fB+lsrO082hapMlbVVNG1gLzvTY\n"
+"V0oDM/AzdnC6feZlAEdM+IcruinVnMnbnhiwPVDInCJIhvmJ/XScvkTsgHwRiAss\n"
+"Tlf8wH/uGXiaeVV/KMlkKRK6h54znTPq37/VpQKBgQDkziG1NuJgRTS05j3bxB/3\n"
+"Z3omJV1Wh2YTsMtswuHIiVGpWWTcnrOyC2VZb2+2iVUDQR83oycfmwZJsYg27BYu\n"
+"+SnNPzxvSiWEtTJiS00rGf7QfwoeMUNbAspEb+jPux5b/6WZ34hfkXRRO/02cagu\n"
+"Mj3DDzhJtDtxG+8pAOEM9QKBgQC+KqWFiPv72UlJUpQKPJmzFpIQsD44cTbgXs7h\n"
+"+32viwbhX0irqS4nxp2SEnAfBJ6sYqS05xSyp3uftOKJRxpTfJ0I8W1drYe5kP6a\n"
+"1Bf7qUcpRzc/JAhaKWn3Wb9MJQrPM7MVGOfCVJmINgAhCCcrEa2xwX/oZnxsp1cB\n"
+"a6RpIwKBgQDW15IebNwVOExTqtfh6UvIjMSrk9OoHDyjoPLI3eyPt3ujKdXFJ8qF\n"
+"CWg9ianQyE5Y8vfDI+x1YRCOwq2WapeXzkSO8CzVFHgz5kFqJQolr4+o6wr5mLLC\n"
+"+6iW9u81/X3bMAWshtNfsWbRSFLT1WNVTKRg+xO7YG/3wcyeIeqigA==\n"
+"-----END RSA PRIVATE KEY-----\n";
 
 static void ccnet_service_free (CcnetService *service);
 
@@ -60,25 +90,17 @@ ccnet_session_init (CcnetSession *session)
 
 static int load_rsakey(CcnetSession *session)
 {
-    char *path;
-    FILE *fp;
-    RSA *key;
+    RSA *key = NULL;
+    BIO *bufio = NULL;
 
-    path = g_build_filename(session->config_dir, PEER_KEYFILE, NULL);
-    if (!g_file_test(path, G_FILE_TEST_EXISTS))
-        ccnet_error ("Can't load rsa private key from %s\n", path);
-    if ((fp = g_fopen(path, "rb")) == NULL)
-        ccnet_error ("Can't open private key file %s: %s\n", path,
-                     strerror(errno));
-    if ((key = PEM_read_RSAPrivateKey(fp, NULL, NULL, NULL)) == NULL)
-        ccnet_error ("Can't open load key file %s: format error\n", path);
-    fclose(fp);
+    bufio = BIO_new_mem_buf((void*)PRIVATE_KEY, -1);
+    PEM_read_bio_RSAPrivateKey(bufio, &key, NULL, NULL);
+    BIO_free (bufio);
 
     session->privkey = key;
     session->pubkey = private_key_to_pub(key);
-    g_free(path);
 
-    return 0; 
+    return 0;
 }
 
 static void save_pubinfo (CcnetSession *session);
@@ -96,12 +118,9 @@ ccnet_session_load_config (CcnetSession *session,
 {
     int ret = 0;
     char *config_file = NULL, *config_dir = NULL, *central_config_dir = NULL;
-    char *id = NULL, *name = NULL, *port_str = NULL,
-        *user_name = NULL;
 #ifdef CCNET_SERVER
     char *service_url;
 #endif
-    int port;
     unsigned char sha1[20];
     GKeyFile *key_file;
 
@@ -136,35 +155,19 @@ ccnet_session_load_config (CcnetSession *session,
         return -1;
     }
 
-    id = ccnet_key_file_get_string (key_file, "General", "ID");
-    user_name = ccnet_key_file_get_string (key_file, "General", "USER_NAME");
-    name = ccnet_key_file_get_string (key_file, "General", "NAME");
 #ifdef CCNET_SERVER
     service_url = ccnet_key_file_get_string (key_file, "General", "SERVICE_URL");
 #endif
-    port_str = ccnet_key_file_get_string (key_file, "Network", "PORT");
 
-    if (port_str == NULL) {
-        port = 0;
-    } else {
-        port = atoi (port_str);
-        if (port <= 0 || port > 65535) {
-            port = DEFAULT_PORT;
-        }
-    }
-
-    if ( (id == NULL) || (strlen (id) != SESSION_ID_LENGTH) 
-         || (hex_to_sha1 (id, sha1) < 0) ) {
-        ccnet_error ("Wrong ID\n");
-        ret = -1;
-        goto onerror;
-    }
-
-    memcpy (session->base.id, id, 40);
+    memcpy (session->base.id, DEFAULT_ID, 40);
     session->base.id[40] = '\0';
-    session->base.name = g_strdup(name);
-    session->base.user_name = g_strdup(user_name);
-    session->base.public_port = port;
+    if (hex_to_sha1 (session->base.id, sha1) < 0) {
+         ccnet_error ("Failed to get sha1 of ID.\n");
+         ret = -1;
+         goto onerror;
+    }
+    session->base.name = DEFAULT_NAME;
+    session->base.public_port = DEFAULT_PORT;
 #ifdef CCNET_SERVER
     session->base.service_url = g_strdup(service_url);
 #endif
@@ -178,10 +181,6 @@ ccnet_session_load_config (CcnetSession *session,
     ret = 0;
 
 onerror:
-    g_free (id);
-    g_free (name);
-    g_free (user_name);
-    g_free (port_str);
 #ifdef CCNET_SERVER
     g_free (service_url);
 #endif
@@ -295,18 +294,10 @@ ccnet_session_save_config (CcnetSession *session)
         session->saving_pub = 0;
     }
 
-    g_key_file_set_string (session->keyf, "General", "NAME",
-                           session->base.name);
-    g_key_file_set_string (session->keyf, "General", "ID", 
-                           session->base.id);
-    g_key_file_set_string (session->keyf, "General", "USER_NAME", 
-                           session->base.user_name);
 #ifdef CCNET_SERVER
     g_key_file_set_string (session->keyf, "General", "SERVICE_URL",
                            session->base.service_url?session->base.service_url:"");
 #endif
-    g_key_file_set_integer (session->keyf, "Network", "PORT",
-                            session->base.public_port);
 
     str = g_key_file_to_data (session->keyf, NULL, &error);
     if (error) {

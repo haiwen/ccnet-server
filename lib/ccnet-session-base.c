@@ -8,7 +8,6 @@ G_DEFINE_TYPE (CcnetSessionBase, ccnet_session_base, G_TYPE_OBJECT);
 
 enum {
     P_ID = 1,
-    P_USER_NAME,
     P_NAME,
     P_PUBLIC_PORT,
     P_NET_STATUS,
@@ -30,10 +29,6 @@ set_property (GObject *object, guint property_id,
     case P_NAME:
         g_free (session->name);
         session->name = g_strdup (g_value_get_string(v));
-        break;
-    case P_USER_NAME:
-        g_free (session->user_name);
-        session->user_name = g_strdup (g_value_get_string(v));
         break;
     case P_PUBLIC_PORT:
         session->public_port = g_value_get_int (v);
@@ -63,9 +58,6 @@ get_property (GObject *object, guint property_id,
     case P_ID:
         g_value_set_string (v, session->id);
         break;
-    case P_USER_NAME:
-        g_value_set_string (v, session->user_name);
-        break;
     case P_NAME:
         g_value_set_string (v, session->name);
         break;
@@ -89,7 +81,6 @@ finalize(GObject *gobject)
 {
     CcnetSessionBase *s = CCNET_SESSION_BASE(gobject);
     
-    g_free (s->user_name);
     g_free (s->name);
     g_free (s->relay_id);
 
@@ -108,10 +99,6 @@ ccnet_session_base_class_init (CcnetSessionBaseClass *klass)
 
     g_object_class_install_property (gobject_class, P_ID,
         g_param_spec_string ("id", NULL, "ID",
-                             NULL, G_PARAM_READWRITE));
-
-    g_object_class_install_property (gobject_class, P_USER_NAME,
-        g_param_spec_string ("user-name", NULL, "User Name",
                              NULL, G_PARAM_READWRITE));
 
    g_object_class_install_property (gobject_class, P_NAME,

@@ -29,8 +29,6 @@ static inline char *GetDeafaultDir()
   #define PREFS_FILE_NAME    "prefs.conf"
 #endif
 
-#define PEER_KEYFILE    "mykey.peer"
-
 #define MAX_USERNAME_LEN 20
 #define MIN_USERNAME_LEN 2
 
