@@ -28,7 +28,6 @@
 
 #define SESSION_CONFIG_FILENAME   "ccnet.conf"
 #define SESSION_PEERDB_NAME       "peer-db"
-#define SESSION_ID_LENGTH         40
 
 
 #define CCNET_TYPE_SESSION                  (ccnet_session_get_type ())
