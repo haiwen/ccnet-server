@@ -816,9 +816,13 @@ hash_password_pbkdf2_sha256 (const char *passwd,
     char salt_str[SHA256_DIGEST_LENGTH*2+1];
 
     if (!RAND_bytes (salt, sizeof(salt))) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || OPENSSL_API_COMPAT < 0x10100000L
         ccnet_warning ("Failed to generate salt "
                        "with RAND_bytes(), use RAND_pseudo_bytes().\n");
         RAND_pseudo_bytes (salt, sizeof(salt));
+#else
+        ccnet_warning ("Failed to generate salt with RAND_bytes().\n");
+#endif
     }
 
     PKCS5_PBKDF2_HMAC (passwd, strlen(passwd),

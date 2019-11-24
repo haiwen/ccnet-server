@@ -108,7 +108,9 @@ main(int argc, char **argv)
 
     config_dir = ccnet_expand_path (config_dir);
     /* printf("[conf_dir=%s\n]", config_dir); */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     OpenSSL_add_all_algorithms();  
+#endif
 
     if (RAND_status() != 1) {   /* it should be seeded automatically */
         fprintf(stderr, "PRNG is not seeded\n");
