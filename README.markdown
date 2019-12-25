@@ -21,6 +21,7 @@ The following packages are required to build ccnet:
 
     valac >= 0.8
     libsearpc
+    ccnet
     libmysqlclient-dev for compiling ccnet server
 
 Compile
