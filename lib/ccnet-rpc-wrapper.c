@@ -42,3 +42,11 @@ ccnet_org_user_exists (SearpcClient *client, int org_id, const char *user)
     return searpc_client_call__int (client, "org_user_exists", NULL,
                                     2, "int", org_id, "string", user);
 }
+
+GList *
+ccnet_get_orgs_by_user (SearpcClient *client, const char *user)
+{
+    return searpc_client_call__objlist (
+        client, "get_orgs_by_user", CCNET_TYPE_ORGANIZATION, NULL,
+        1, "string", user);
+}
