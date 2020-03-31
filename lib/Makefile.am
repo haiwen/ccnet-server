@@ -60,6 +60,7 @@ libccnetd_la_SOURCES = utils.c db.c job-mgr.c \
 libccnetd_la_LDFLAGS = -no-undefined
 libccnetd_la_LIBADD = @GLIB2_LIBS@  @GOBJECT_LIBS@ @SSL_LIBS@ @LIB_GDI32@ \
 	                  -lsqlite3 @LIBEVENT_LIBS@ @LIB_WS32@ @LIB_UUID@ \
+			@LIB_KVM@ \
 					  @LIB_SHELL32@ @LIB_PSAPI@ @SEARPC_LIBS@
 
 
