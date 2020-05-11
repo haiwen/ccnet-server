@@ -138,10 +138,6 @@ static int init_mysql_database (CcnetSession *session)
     passwd = ccnet_key_file_get_string (session->keyf, "Database", "PASSWD");
     db = ccnet_key_file_get_string (session->keyf, "Database", "DB");
 
-    if (!host) {
-        g_warning ("DB host not set in config.\n");
-        return -1;
-    }
     if (!user) {
         g_warning ("DB user not set in config.\n");
         return -1;
@@ -177,7 +173,12 @@ static int init_mysql_database (CcnetSession *session)
         g_clear_error (&error);
     }
 
-    session->db = ccnet_db_new_mysql (host, port, user, passwd, db, unix_socket, use_ssl, charset, max_connections);
+    if (unix_socket) {session->db = ccnet_db_new_mysql (NULL, 0, user, passwd, db, unix_socket, NULL, charset, max_connections);}
+       else if (host) {session->db = ccnet_db_new_mysql (host, port, user, passwd, db, NULL, use_ssl, charset, max_connections);}
+               else {
+                   g_warning ("DB host or socket not set in config.\n");
+                   return -1;
+               }
     if (!session->db) {
         g_warning ("Failed to open database.\n");
         return -1;
