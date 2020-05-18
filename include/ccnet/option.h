@@ -32,7 +32,7 @@ static inline char *GetDeafaultDir()
 #define MAX_USERNAME_LEN 20
 #define MIN_USERNAME_LEN 2
 
-#define DEFAULT_PORT       10001
+#define DEFAULT_PORT       0
 
 #define CHAT_APP      "Chat"
 #define PEERMGR_APP   "PeerMgr"
