@@ -71,7 +71,12 @@ AC_ARG_ENABLE(python,
 AC_ARG_WITH(mysql,
             AC_HELP_STRING([--with-mysql],[path to mysql_config]),
             [MYSQL_CONFIG=$with_mysql],
-	    [MYSQL_CONFIG="default_mysql_config"])
+            [MYSQL_CONFIG="default_mysql_config"])
+
+AC_ARG_WITH(postgresql,
+            AC_HELP_STRING([--with-postgresql],[path to pg_config]),
+            [PG_CONFIG=$with_postgresql],
+            [PG_CONFIG="default_postgresql_config"])
 
 AM_CONDITIONAL([COMPILE_PYTHON], [test "${compile_python}" = "yes"])
 
@@ -226,6 +231,23 @@ else
     AC_SUBST(MYSQL_CFLAGS)
     AC_SUBST(MYSQL_LIBS)
     AC_DEFINE([HAVE_MYSQL], 1, [Define to 1 if MySQL support is enabled])
+fi
+
+if test "x${PG_CONFIG}" = "xdefault_postgresql_config"; then
+    PKG_CHECK_MODULES(PGSQL, [libpq], [have_postgresql="yes"], [have_postgresql="no"])
+    if test "x${have_postgresql}" = "xyes"; then
+        AC_SUBST(PGSQL_CFLAGS)
+        AC_SUBST(PGSQL_LIBS)
+        AC_DEFINE([HAVE_POSTGRESQL], 1, [Define to 1 if PostgreSQL support is enabled])
+    fi
+else
+    AC_MSG_CHECKING([for PostgreSQL])
+    PGSQL_CFLAGS="-I`${PG_CONFIG} --includedir`"
+    PGSQL_LIBS="-L`${PG_CONFIG} --libdir` -lpq"
+    AC_MSG_RESULT([${PGSQL_CFLAGS}])
+    AC_SUBST(PGSQL_CFLAGS)
+    AC_SUBST(PGSQL_LIBS)
+    AC_DEFINE([HAVE_POSTGRESQL], 1, [Define to 1 if PostgreSQL support is enabled])
 fi
 
 if test x${compile_python} = xyes; then

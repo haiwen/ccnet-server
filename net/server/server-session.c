@@ -196,7 +196,7 @@ static int init_mysql_database (CcnetSession *session)
 
 #endif
 
-#if 0
+#ifdef HAVE_POSTGRESQL
 
 static int init_pgsql_database (CcnetSession *session)
 {
@@ -208,10 +208,6 @@ static int init_pgsql_database (CcnetSession *session)
     passwd = ccnet_key_file_get_string (session->keyf, "Database", "PASSWD");
     db = ccnet_key_file_get_string (session->keyf, "Database", "DB");
 
-    if (!host) {
-        g_warning ("DB host not set in config.\n");
-        return -1;
-    }
     if (!user) {
         g_warning ("DB user not set in config.\n");
         return -1;
@@ -241,6 +237,14 @@ static int init_pgsql_database (CcnetSession *session)
         return -1;
     }
 
+    g_free (host);
+    g_free (user);
+    g_free (passwd);
+    g_free (db);
+    g_free (unix_socket);
+    if (error)
+        g_clear_error (&error);
+
    return 0;
 }
 
@@ -264,7 +268,7 @@ load_database_config (CcnetSession *session)
         ret = init_mysql_database (session);
     }
 #endif
-#if 0
+#ifdef HAVE_POSTGRESQL
     else if (strncasecmp (engine, DB_PGSQL, sizeof(DB_PGSQL)) == 0) {
         ccnet_debug ("Use database PostgreSQL\n");
         ret = init_pgsql_database (session);

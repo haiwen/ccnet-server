@@ -3,6 +3,7 @@
 
 #define DB_SQLITE "sqlite"
 #define DB_MYSQL "mysql"
+#define DB_PGSQL "pgsql"
 
 enum {
     CCNET_DB_TYPE_SQLITE,
@@ -27,7 +28,7 @@ ccnet_db_new_mysql (const char *host,
                     const char *charset,
                     int max_connections);
 
-#if 0
+
 CcnetDB *
 ccnet_db_new_pgsql (const char *host,
                     unsigned int port,
@@ -36,7 +37,7 @@ ccnet_db_new_pgsql (const char *host,
                     const char *db_name,
                     const char *unix_socket,
                     int max_connections);
-#endif
+
 
 CcnetDB *
 ccnet_db_new_sqlite (const char *db_path);
