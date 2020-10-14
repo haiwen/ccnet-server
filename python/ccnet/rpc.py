@@ -157,8 +157,8 @@ class CcnetThreadedRpcClient(NamedPipeClient):
     def get_group(self, group_id):
         pass
 
-    @searpc_func("objlist", ["int"])
-    def get_group_members(self, group_id):
+    @searpc_func("objlist", ["int", "int", "int"])
+    def get_group_members(self, group_id, start, limit):
         pass
 
     @searpc_func("objlist", ["int", "string"])
