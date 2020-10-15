@@ -29,11 +29,11 @@ ccnet_get_org_groups_by_user (SearpcClient *client, const char *user, int org_id
 }
 
 GList *
-ccnet_get_group_members (SearpcClient *client, int group_id)
+ccnet_get_group_members (SearpcClient *client, int group_id, int start, int limit)
 {
     return searpc_client_call__objlist (
         client, "get_group_members", CCNET_TYPE_GROUP_USER, NULL,
-        1, "int", group_id);
+        3, "int", group_id, "int", start, "int", limit);
 }
 
 int

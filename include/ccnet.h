@@ -30,7 +30,7 @@
 GList *ccnet_get_groups_by_user (SearpcClient *client, const char *user, int return_ancestors);
 GList *ccnet_get_org_groups_by_user (SearpcClient *client, const char *user, int org_id);
 GList *
-ccnet_get_group_members (SearpcClient *client, int group_id);
+ccnet_get_group_members (SearpcClient *client, int group_id, int start, int limit);
 int
 ccnet_org_user_exists (SearpcClient *client, int org_id, const char *user);
 
