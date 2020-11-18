@@ -1713,12 +1713,12 @@ ccnet_user_manager_get_role_emailuser (CcnetUserManager *manager,
 
     CcnetDB *db = manager->priv->db;
     const char *sql;
-    char* role;
+    char* role_email;
 
-    sql = "SELECT role FROM UserRole WHERE email=?";
-    if (ccnet_db_statement_foreach_row (db, sql, get_role_emailuser_cb, &role,
+    sql = "SELECT email FROM UserRole WHERE email=?";
+    if (ccnet_db_statement_foreach_row (db, sql, get_role_emailuser_cb, &role_email,
                                         1, "string", email) > 0)
-        return role;
+        return role_email;
 
     return NULL;
 }
@@ -1728,9 +1728,9 @@ ccnet_user_manager_update_role_emailuser (CcnetUserManager *manager,
                                      const char* email, const char* role)
 {
     CcnetDB* db = manager->priv->db;
-    char *old_role = ccnet_user_manager_get_role_emailuser (manager, email);
-    if (old_role) {
-        g_free (old_role);
+    char *role_email = ccnet_user_manager_get_role_emailuser (manager, email);
+    if (role_email) {
+        g_free (role_email);
         return ccnet_db_statement_query (db, "UPDATE UserRole SET role=? "
                                          "WHERE email=?",
                                          2, "string", role, "string", email);
