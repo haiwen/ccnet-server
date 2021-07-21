@@ -72,7 +72,7 @@ typedef struct MySQLDBConnection {
 static MYSQL *
 connect_mysql (MySQLDBConnPool *pool, GError **error)
 {
-    my_bool yes = 1;
+    bool yes = 1;
     volatile int connect_timeout = SQL_DEFAULT_TCP_TIMEOUT;
     unsigned long client_flags = CLIENT_MULTI_STATEMENTS;
     MYSQL *db;
@@ -200,7 +200,7 @@ mysql_result_set_new (MYSQL_STMT *stmt, GError **error)
         r->bind[i].buffer_type = MYSQL_TYPE_STRING;
         r->bind[i].buffer_length = DEFAULT_COLUMN_SIZE;
         r->bind[i].length = g_new0 (unsigned long, 1);
-        r->bind[i].is_null = g_new0 (my_bool, 1);
+        r->bind[i].is_null = g_new0 (bool, 1);
     }
 
     if (mysql_stmt_bind_result (stmt, r->bind) != 0) {
@@ -433,7 +433,7 @@ gboolean
 mysql_stmt_set_string (DBStmt *vstmt, int i, const char *s, GError **error)
 {
     MySQLDBStmt *stmt = (MySQLDBStmt *)vstmt;
-    static my_bool yes = TRUE;
+    static bool yes = TRUE;
     unsigned long *plen;
 
     if (i < 0 || i >= stmt->param_count) {

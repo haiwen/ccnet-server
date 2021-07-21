@@ -35,7 +35,7 @@
 #include <openssl/evp.h>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
-
+//#include <openssl/types.h>
 
 #include <glib.h>
 #include <glib/gstdio.h>
@@ -1052,7 +1052,7 @@ ccnet_encrypt_with_key (char **data_out,
         g_warning ("Invalid params.\n");
         return -1;
     }
-
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     EVP_CIPHER_CTX ctx;
     int ret;
     int blks;
@@ -1114,6 +1114,70 @@ ccnet_encrypt_with_key (char **data_out,
 
 enc_error:
     EVP_CIPHER_CTX_cleanup (&ctx);
+#else
+    EVP_CIPHER_CTX *ctx;
+    int ret;
+    int blks;
+
+    /* Prepare CTX for encryption. */
+    ctx=EVP_CIPHER_CTX_new();
+
+    ret = EVP_EncryptInit_ex (ctx,
+                              EVP_aes_256_cbc(), /* cipher mode */
+                              NULL, /* engine, NULL for default */
+                              key,  /* derived key */
+                              iv);  /* initial vector */
+
+    if (ret == ENC_FAILURE) {
+        g_warning ("error init\n");
+        return -1;
+    }
+
+    /* Allocating output buffer. */
+
+    /*
+      For EVP symmetric encryption, padding is always used __even if__
+      data size is a multiple of block size, in which case the padding
+      length is the block size. so we have the following:
+    */
+
+    blks = (in_len / BLK_SIZE) + 1;
+    *data_out = (char *) g_malloc(blks * BLK_SIZE);
+    if (*data_out == NULL) {
+        g_warning ("failed to allocate the output buffer.\n");
+        goto enc_error;
+    }
+
+    int update_len, final_len;
+
+    /* Do the encryption. */
+    ret = EVP_EncryptUpdate (ctx,
+                             (unsigned char*)*data_out,
+                             &update_len,
+                             (unsigned char*)data_in,
+                             in_len);
+    if (ret == ENC_FAILURE) {
+        g_warning ("error update\n");
+        goto enc_error;
+    }
+
+    /* Finish the possible partial block. */
+    ret = EVP_EncryptFinal_ex (ctx,
+                               (unsigned char*)*data_out + update_len,
+                               &final_len);
+    *out_len = update_len + final_len;
+    /* out_len should be equal to the allocated buffer size. */
+    if (ret == ENC_FAILURE || *out_len != (blks * BLK_SIZE)) {
+        goto enc_error;
+    }
+
+    EVP_CIPHER_CTX_cleanup (ctx);
+    return 0;
+
+enc_error:
+    EVP_CIPHER_CTX_cleanup (ctx);
+#endif
+
     *out_len = -1;
     if (*data_out != NULL)
         g_free (*data_out);
@@ -1138,6 +1202,7 @@ ccnet_decrypt_with_key (char **data_out,
         return -1;
     }
 
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     EVP_CIPHER_CTX ctx;
     int ret;
 
@@ -1187,6 +1252,58 @@ ccnet_decrypt_with_key (char **data_out,
 
 dec_error:
     EVP_CIPHER_CTX_cleanup (&ctx);
+#else
+    EVP_CIPHER_CTX *ctx;
+    int ret;
+
+    *data_out = NULL;
+    *out_len = -1;
+
+    /* Prepare CTX for decryption. */
+    EVP_CIPHER_CTX_init (ctx);
+    ret = EVP_DecryptInit_ex (ctx,
+                              EVP_aes_256_cbc(), /* cipher mode */
+                              NULL, /* engine, NULL for default */
+                              key,  /* derived key */
+                              iv);  /* initial vector */
+
+    if (ret == DEC_FAILURE)
+        return -1;
+
+    /* Allocating output buffer. */
+    *data_out = (char *)g_malloc (in_len);
+    if (*data_out == NULL) {
+        g_warning ("failed to allocate the output buffer.\n");
+        goto dec_error;
+    }
+
+    int update_len, final_len;
+
+    /* Do the decryption. */
+    ret = EVP_DecryptUpdate (ctx,
+                             (unsigned char*)*data_out,
+                             &update_len,
+                             (unsigned char*)data_in,
+                             in_len);
+    if (ret == DEC_FAILURE)
+        goto dec_error;
+
+    /* Finish the possible partial block. */
+    ret = EVP_DecryptFinal_ex (ctx,
+                               (unsigned char*)*data_out + update_len,
+                               &final_len);
+    *out_len = update_len + final_len;
+    /* out_len should be smaller than in_len. */
+    if (ret == DEC_FAILURE || *out_len > in_len)
+        goto dec_error;
+
+    EVP_CIPHER_CTX_cleanup (ctx);
+    return 0;
+
+dec_error:
+    EVP_CIPHER_CTX_cleanup (ctx);
+
+#endif
     *out_len = -1;
     if (*data_out != NULL)
         g_free (*data_out);
